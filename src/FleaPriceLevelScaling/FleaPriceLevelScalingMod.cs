@@ -24,7 +24,7 @@ namespace FleaPriceLevelScaling;
 /// is written to the profile - the profile is only ever read, for the level and
 /// for the per-playthrough market seed.
 /// </summary>
-[Injectable(TypePriority = OnLoadOrder.RagfairCallbacks - 2)]
+[Injectable(InjectionType.Singleton, TypePriority = OnLoadOrder.RagfairCallbacks - 2)]
 public class FleaPriceLevelScalingMod(
     ISptLogger<FleaPriceLevelScalingMod> logger,
     TemplateTable templateTable,
@@ -255,24 +255,35 @@ public class FleaPriceLevelScalingMod(
 
     /// <summary>
     /// The price table is global but the level is per-profile, so pick the profile
-    /// that is actually playing. Falls back to the only profile if there is exactly
-    /// one, which is the normal single-player case before the client connects.
+    /// that is actually playing. When no client is active yet (or multiple profiles
+    /// exist as in Fika), falls back to the highest-level profile found on disk.
     /// </summary>
     private PmcData? ResolveActiveProfile()
     {
         try
         {
-            foreach (var sessionId in profileActivityService.GetActiveProfileIdsWithinMinutes(30))
+            var activePmcs = profileActivityService.GetActiveProfileIdsWithinMinutes(30)
+                .Select(sessionId => profileHelper.GetPmcProfile(new MongoId(sessionId)))
+                .Where(pmc => pmc?.Info?.Level is not null)
+                .ToList();
+
+            if (activePmcs.Count > 0)
             {
-                var pmc = profileHelper.GetPmcProfile(new MongoId(sessionId));
-                if (pmc?.Info?.Level is not null) return pmc;
+                return activePmcs.OrderByDescending(p => p!.Info!.Level).ThenBy(p => p!.Id.ToString()).First();
             }
 
-            var profiles = profileHelper.GetProfiles();
-            if (profiles.Count == 1)
+            var allProfiles = profileHelper.GetProfiles();
+            if (allProfiles.Count > 0)
             {
-                var pmc = profileHelper.GetPmcProfile(profiles.Keys.First());
-                if (pmc?.Info?.Level is not null) return pmc;
+                var allPmcs = allProfiles.Keys
+                    .Select(id => profileHelper.GetPmcProfile(id))
+                    .Where(pmc => pmc?.Info?.Level is not null)
+                    .ToList();
+
+                if (allPmcs.Count > 0)
+                {
+                    return allPmcs.OrderByDescending(p => p!.Info!.Level).ThenBy(p => p!.Id.ToString()).First();
+                }
             }
         }
         catch (Exception ex)
