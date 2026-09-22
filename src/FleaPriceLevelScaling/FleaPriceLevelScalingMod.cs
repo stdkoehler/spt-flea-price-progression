@@ -39,9 +39,10 @@ public class FleaPriceLevelScalingMod(
 {
     private const string Tag = "[FleaPriceLevelScaling]";
 
-    /// <summary>How often to re-check level and hour. The price walk moves on a 2-day
-    /// timescale, so anything under a few minutes is wasted work.</summary>
-    private const long UpdateIntervalSeconds = 120;
+    /// <summary>How often to re-check level and time. Clamped to at most 120s or the configured
+    /// regeneration interval in seconds.</summary>
+    private long CheckIntervalSeconds =>
+        Math.Clamp((long)Math.Max(1, _config.Debug.RegenerationIntervalMinutes) * 60, 10, 120);
 
     private Config _config = new();
     private PriceTable? _table;
@@ -50,7 +51,7 @@ public class FleaPriceLevelScalingMod(
     private bool _active;
 
     private int _lastLevel = -1;
-    private long _lastHour = -1;
+    private long _lastStep = -1;
     private ulong _lastWorld;
 
     private string ModFolder => modHelper.GetAbsolutePathToModFolder(Assembly.GetExecutingAssembly());
@@ -108,7 +109,8 @@ public class FleaPriceLevelScalingMod(
                        $"scalingMaxLevel: {_config.ScalingMaxLevel}, " +
                        $"priceShockSize: {_config.PriceShockSize}, " +
                        $"noise.enabled: {_config.Noise.Enabled}, " +
-                       $"noise.amplitudeScale: {_config.Noise.AmplitudeScale}");
+                       $"noise.amplitudeScale: {_config.Noise.AmplitudeScale}, " +
+                       $"regenerationInterval: {_config.Debug.RegenerationIntervalMinutes}m");
 
         Apply(regenerateRagfair: false);
         return Task.CompletedTask;
@@ -116,9 +118,10 @@ public class FleaPriceLevelScalingMod(
 
     public Task<bool> OnUpdateAsync(long secondsSinceLastRun, CancellationToken cancellationToken)
     {
-        if (!_active || secondsSinceLastRun < UpdateIntervalSeconds) return Task.FromResult(false);
+        var interval = CheckIntervalSeconds;
+        if (!_active || secondsSinceLastRun < interval) return Task.FromResult(false);
 
-        logger.Info($"{Tag} Entering 120s update callback ({secondsSinceLastRun}s elapsed).");
+        logger.Info($"{Tag} Entering {interval}s update callback ({secondsSinceLastRun}s elapsed).");
 
         try
         {
@@ -137,23 +140,28 @@ public class FleaPriceLevelScalingMod(
     }
 
     /// <summary>
-    /// Recompute prices for the current level and hour. Cheap and idempotent: it
-    /// returns immediately unless the level, the hour or the active profile changed.
+    /// Recompute prices for the current level and time step. Cheap and idempotent: it
+    /// returns immediately unless the level, the time step or the active profile changed.
     /// </summary>
     private void Apply(bool regenerateRagfair)
     {
         if (_table is null) return;
 
+        var intervalMinutes = Math.Max(1, _config.Debug.RegenerationIntervalMinutes);
+        var currentMinute = DateTimeOffset.UtcNow.ToUnixTimeSeconds() / 60;
+        var step = currentMinute / intervalMinutes;
+        var hour = step * (intervalMinutes / 60.0);
+
         var pmc = ResolveActiveProfile();
         var level = Math.Clamp(pmc?.Info?.Level ?? _config.Debug.FleaUnlockLevel, 1, _table.MaxLevel);
         var world = ResolveWorldSeed(pmc);
-        var hour = (long)FleaNoise.CurrentHour();
 
-        if (level == _lastLevel && hour == _lastHour && world == _lastWorld) return;
+        if (level == _lastLevel && step == _lastStep && world == _lastWorld) return;
 
         var firstRun = _lastLevel < 0;
         var levelChanged = level != _lastLevel && !firstRun;
-        var hourChanged = hour != _lastHour && !firstRun;
+        var timeChanged = step != _lastStep && !firstRun;
+        var timeDesc = intervalMinutes == 60 ? "hourly" : $"{intervalMinutes}-minute";
 
         if (firstRun && _config.Debug.LogWorldSeed)
         {
@@ -164,12 +172,12 @@ public class FleaPriceLevelScalingMod(
         {
             if (levelChanged)
                 logger.Info($"{Tag} Player level {_lastLevel} -> {level}, reprising flea.");
-            if (hourChanged)
-                logger.Info($"{Tag} Hourly update triggered (hour {_lastHour} -> {hour}), reprising flea.");
+            if (timeChanged)
+                logger.Info($"{Tag} {char.ToUpper(timeDesc[0]) + timeDesc[1..]} update triggered (step {_lastStep} -> {step}), reprising flea.");
         }
 
         _lastLevel = level;
-        _lastHour = hour;
+        _lastStep = step;
         _lastWorld = world;
 
         var prices = templateTable.Prices;
@@ -215,10 +223,10 @@ public class FleaPriceLevelScalingMod(
 
         RegenerateRagfair();
 
-        if (hourChanged && levelChanged)
-            logger.Info($"{Tag} Successfully recreated {updated} prices due to hourly update and player level change.");
-        else if (hourChanged)
-            logger.Info($"{Tag} Successfully recreated {updated} prices due to hourly update.");
+        if (timeChanged && levelChanged)
+            logger.Info($"{Tag} Successfully recreated {updated} prices due to {timeDesc} update and player level change.");
+        else if (timeChanged)
+            logger.Info($"{Tag} Successfully recreated {updated} prices due to {timeDesc} update.");
         else if (levelChanged)
             logger.Info($"{Tag} Successfully recreated {updated} prices due to player level update.");
     }

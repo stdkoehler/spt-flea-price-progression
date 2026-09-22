@@ -43,6 +43,7 @@ public class Config
         public double SigmaCap { get; set; } = 0.5;
         public double JumpProbability { get; set; } = 0.04;
         public int FleaUnlockLevel { get; set; } = 15;
+        public int RegenerationIntervalMinutes { get; set; } = 60;
         public List<string> ItemBlacklist { get; set; } = new();
     }
 
@@ -94,6 +95,12 @@ public class Config
         {
             notes.Add($"debug.fleaUnlockLevel was {Debug.FleaUnlockLevel}, reset to 15");
             Debug.FleaUnlockLevel = 15;
+        }
+
+        if (Debug.RegenerationIntervalMinutes < 1)
+        {
+            notes.Add($"debug.regenerationIntervalMinutes was {Debug.RegenerationIntervalMinutes}, reset to 1");
+            Debug.RegenerationIntervalMinutes = 1;
         }
 
         // Checked after fleaUnlockLevel so the comparison uses the corrected value.
