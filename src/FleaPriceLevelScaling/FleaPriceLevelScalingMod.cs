@@ -20,7 +20,7 @@ namespace FleaPriceLevelScaling;
 /// <summary>
 /// Scales flea prices by player level, replaying a real Tarkov season.
 ///
-/// Level sets the trend; wall-clock hour sets a stateless price walk on top. Nothing
+/// Level defines the position in the trend trend; wall-clock hour sets a stateless price walk on top. Nothing
 /// is written to the profile - the profile is only ever read, for the level and
 /// for the per-playthrough market seed.
 /// </summary>
@@ -95,16 +95,18 @@ public class FleaPriceLevelScalingMod(
         FleaNoise.JumpProbability = _config.Debug.JumpProbability;
 
         // Take SPT's own flea pricing out of the loop, and keep a pristine copy of
-        // the original table so price bounds stay anchored to it rather than to
-        // whatever we wrote last pass.
+        // the original table so price bounds stay anchored to it.
         ragfairConfig.Dynamic.GenerateBaseFleaPrices.UseHandbookPrice = false;
         _originalPrices = cloner.Clone(templateTable.Prices)!;
         _active = true;
+
+        var serverMode = IsFikaServer() ? "FIKA" : "Local";
 
         logger.Success($"{Tag} Loaded {_table.LevelPrice.Count} item curves " +
                        $"from {_table.Info.Snapshots} real flea snapshots " +
                        $"(season day {_config.Debug.StartDay:0} -> {_config.Debug.EndDay:0} " +
                        $"across levels {_config.Debug.FleaUnlockLevel}-{_table.MaxLevel}) | " +
+                       $"server: {serverMode}, " +
                        $"intensityExponent: {_config.IntensityExponent}, " +
                        $"scalingMaxLevel: {_config.ScalingMaxLevel}, " +
                        $"priceShockSize: {_config.PriceShockSize}, " +
@@ -115,6 +117,10 @@ public class FleaPriceLevelScalingMod(
         Apply(regenerateRagfair: false);
         return Task.CompletedTask;
     }
+
+    private static bool IsFikaServer() =>
+        AppDomain.CurrentDomain.GetAssemblies()
+            .Any(a => a.GetName().Name?.Contains("Fika", StringComparison.OrdinalIgnoreCase) == true);
 
     public Task<bool> OnUpdateAsync(long secondsSinceLastRun, CancellationToken cancellationToken)
     {
