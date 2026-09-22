@@ -89,6 +89,31 @@ Likely not needed.
 | `regenerationIntervalMinutes` | `60` | `>= 1` | How often prices drift and flea offers regenerate, in minutes. Set lower (e.g. 5 or 1) for debugging/testing. |
 | `itemBlacklist` | `[]` | - | Template IDs to leave at SPT's default price. |
 
+## Local vs. FIKA (Multiplayer / Co-op)
+
+Because flea prices in EFT are global across the server, the mod resolves profile levels as follows:
+
+### Scenarios & Behavior
+
+1. **Server Start (no players connected yet):**
+   - The mod inspects all profiles stored on disk in `user/profiles/` and initializes the market using the **highest PMC level found**.
+   - *Example:* If you have a Level 15 profile and a Level 17 profile on disk, the server starts up with base prices anchored to **Level 17**.
+
+2. **Single-Player (Local server or solo on FIKA):**
+   - When a player logs in, their profile is marked active.
+   - Within the update interval (default: 120s), the mod detects the active player and adapts the market to their level.
+   - *Example:* If you log in with your Level 15 character, the server updates prices from 17 -> 15 (`Player level 17 -> 15, reprising flea`).
+   - For single-player, this is the preferred behavior because the economy should always reflect the specific character you are currently playing.
+
+3. **Co-op / Multiplayer (FIKA with multiple active players):**
+   - If multiple players are playing simultaneously, the market dynamically scales to the **highest level among all currently active players** (active within the last 30 minutes).
+   - *Example:*
+     - Player 1 logs in with a **Level 15** PMC -> market runs at **Level 15**.
+     - Player 2 joins with a **Level 17** PMC -> at the next update tick, the market detects Player 2 and upgrades flea offers to **Level 17** (`Player level 15 -> 17, reprising flea`).
+     - Both players share the flea market matching the group's highest progression.
+     - When Player 2 logs off, after 30 minutes of inactivity the market transitions back down to Level 15 for the remaining player.
+   - *Consideration for FIKA groups:* In a dedicated co-op group, one could argue the market should be anchored to the highest-level profile existing on the server overall rather than switching dynamically depending on who is actively connected. This would keep the group's shared world progression steady. We have not made a final decision on this yet and are keeping it dynamic for now.
+
 ## Known quirks
 
 - **Some prices look odd sometimes.** These are price shocks we see in real flea data. Set priceShockSize = `1` if you don't like that. Or disable noise completely by noise.enabled = `false`.

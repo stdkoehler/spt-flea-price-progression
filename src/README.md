@@ -64,7 +64,14 @@ Items absent from the table (`pegged` and `sparse`, ~700) keep SPT's default pri
 
 ## Profile access
 
-Read-only; `ProfileActivityService.GetActiveProfileIdsWithinMinutes(30)` finds who is playing, falling back to the sole profile when only one exists. From the PMC the mod reads `Info.Level`, plus `_id` and `Info.RegistrationDate` for the per-playthrough market seed.
+Read-only. `ProfileActivityService.GetActiveProfileIdsWithinMinutes(30)` finds all actively playing profiles and selects the PMC with the highest level. If no player is currently active (such as during server startup), the mod inspects all profiles on disk in `user/profiles/` and defaults to the highest PMC level found.
+
+This ensures seamless support for both local single-player setups and multiplayer / FIKA servers:
+- **Server boot (offline):** Base flea prices are anchored to the highest PMC level on disk instead of blindly defaulting to level 15.
+- **Solo play:** When a player logs in, the flea market smoothly adapts to their active level.
+- **FIKA co-op:** When multiple friends play concurrently, flea prices scale to the highest level among all currently active players.
+
+From the resolved PMC the mod reads `Info.Level`, plus `_id` and `Info.RegistrationDate` for the per-playthrough market seed.
 
 ### Player flea listings
 

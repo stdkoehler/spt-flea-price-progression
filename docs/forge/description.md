@@ -51,6 +51,17 @@ market movement.
 *Two characters' playthroughs showing different market movement around the
 same underlying trend (black).*
 
+## Local and FIKA (Co-op) Support
+
+Because flea prices in EFT are global across the server, the mod handles single-player and multiplayer sessions seamlessly:
+
+- **At server startup (no players connected yet):** The mod scans your profiles and initializes prices using the highest PMC level found on disk (e.g. Level 17).
+- **Solo play (Local server or solo on FIKA):** When you log into your profile, the flea market automatically adjusts to your active character level within 2 minutes. For single-player, this is the preferred behavior because the economy always reflects whichever character you are currently playing.
+- **Co-op play with friends (FIKA):** When multiple players are online simultaneously on a FIKA server, the flea market dynamically scales to the **highest level among all currently active players**.
+  - If a Level 15 player is playing and a Level 17 friend joins, the flea market smoothly updates to Level 17 so the economy matches the group's highest progression.
+  - If the higher-level player logs off, prices automatically adjust back down after 30 minutes of inactivity.
+  - *Consideration for FIKA groups:* In a dedicated co-op group, one could argue the market should be anchored to the highest-level profile existing on the server overall rather than switching dynamically depending on who is actively connected. This would keep the group's shared world progression steady. We have not made a final decision on this yet and are keeping it dynamic for now.
+
 ## Credits
 
 Price data comes from
