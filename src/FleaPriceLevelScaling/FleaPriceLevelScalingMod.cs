@@ -51,8 +51,8 @@ public class FleaPriceLevelScalingMod(
     private bool _active;
 
     private int _lastLevel = -1;
-    private long _lastStep = -1;
     private ulong _lastWorld;
+    private readonly RegenerationTimer _regenerationTimer = new();
 
     private string ModFolder => modHelper.GetAbsolutePathToModFolder(Assembly.GetExecutingAssembly());
 
@@ -146,28 +146,29 @@ public class FleaPriceLevelScalingMod(
     }
 
     /// <summary>
-    /// Recompute prices for the current level and time step. Cheap and idempotent: it
-    /// returns immediately unless the level, the time step or the active profile changed.
+    /// Recompute prices for the current level and market hour. Cheap and idempotent: it
+    /// returns immediately unless the level, the regeneration interval or the active profile changed.
     /// </summary>
     private void Apply(bool regenerateRagfair)
     {
         if (_table is null) return;
 
         var intervalMinutes = Math.Max(1, _config.Debug.RegenerationIntervalMinutes);
-        var currentMinute = DateTimeOffset.UtcNow.ToUnixTimeSeconds() / 60;
-        var step = currentMinute / intervalMinutes;
-        var hour = step * (intervalMinutes / 60.0);
+        var interval = TimeSpan.FromMinutes(intervalMinutes);
+        var intervalElapsed = _regenerationTimer.IsDue(interval, out var elapsed);
 
         var pmc = ResolveActiveProfile();
         var level = Math.Clamp(pmc?.Info?.Level ?? _config.Debug.FleaUnlockLevel, 1, _table.MaxLevel);
         var world = ResolveWorldSeed(pmc);
 
-        if (level == _lastLevel && step == _lastStep && world == _lastWorld) return;
-
         var firstRun = _lastLevel < 0;
         var levelChanged = level != _lastLevel && !firstRun;
-        var timeChanged = step != _lastStep && !firstRun;
-        var timeDesc = intervalMinutes == 60 ? "hourly" : $"{intervalMinutes}-minute";
+        var worldChanged = world != _lastWorld && !firstRun;
+        var timeChanged = intervalElapsed && !firstRun;
+
+        if (!firstRun && !levelChanged && !timeChanged && !worldChanged) return;
+
+        var intervalDesc = RegenerationTimer.FormatIntervalDescription(intervalMinutes);
 
         if (firstRun && _config.Debug.LogWorldSeed)
         {
@@ -177,20 +178,27 @@ public class FleaPriceLevelScalingMod(
         else if (!firstRun)
         {
             if (levelChanged)
-                logger.Info($"{Tag} Player level {_lastLevel} -> {level}, reprising flea.");
+                logger.Info($"{Tag} Player level {_lastLevel} -> {level}, repricing flea.");
             if (timeChanged)
-                logger.Info($"{Tag} {char.ToUpper(timeDesc[0]) + timeDesc[1..]} update triggered (step {_lastStep} -> {step}), reprising flea.");
+            {
+                var elapsedMinutes = (int)Math.Round(elapsed.TotalMinutes);
+                logger.Info($"{Tag} {intervalDesc} update triggered ({elapsedMinutes}m elapsed), repricing flea.");
+            }
         }
 
         _lastLevel = level;
-        _lastStep = step;
         _lastWorld = world;
+        if (firstRun || timeChanged)
+        {
+            _regenerationTimer.RecordRegeneration();
+        }
 
         var prices = templateTable.Prices;
         var items = templateTable.Items;
         var noiseOn = _config.Noise.Enabled && _config.Noise.AmplitudeScale > 0;
         var minMult = _config.Debug.PriceBounds.Min;
         var maxMult = _config.Debug.PriceBounds.Max;
+        var currentHour = RegenerationTimer.CurrentMarketHour;
         var updated = 0;
         var skipped = 0;
 
@@ -206,7 +214,7 @@ public class FleaPriceLevelScalingMod(
             if (noiseOn && _table.Sigma.TryGetValue(idText, out var sigma))
             {
                 var amplitude = Math.Min(sigma * _config.Noise.AmplitudeScale, _config.Debug.SigmaCap);
-                price *= Math.Exp(amplitude * FleaNoise.Z(FleaNoise.SeedOf(idText, world), hour));
+                price *= Math.Exp(amplitude * FleaNoise.Z(FleaNoise.SeedOf(idText, world), currentHour));
             }
 
             // Bound against SPT's ORIGINAL price
@@ -229,10 +237,11 @@ public class FleaPriceLevelScalingMod(
 
         RegenerateRagfair();
 
+        var lowerDesc = intervalDesc.ToLowerInvariant();
         if (timeChanged && levelChanged)
-            logger.Info($"{Tag} Successfully recreated {updated} prices due to {timeDesc} update and player level change.");
+            logger.Info($"{Tag} Successfully recreated {updated} prices due to {lowerDesc} update and player level change.");
         else if (timeChanged)
-            logger.Info($"{Tag} Successfully recreated {updated} prices due to {timeDesc} update.");
+            logger.Info($"{Tag} Successfully recreated {updated} prices due to {lowerDesc} update.");
         else if (levelChanged)
             logger.Info($"{Tag} Successfully recreated {updated} prices due to player level update.");
     }

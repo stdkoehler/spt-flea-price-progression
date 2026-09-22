@@ -5,6 +5,7 @@ Builds against **SPT 4.1.x** / .NET 10.
 | File | Role |
 |---|---|
 | `FleaPriceLevelScalingMod.cs` | `IOnLoad` + `IOnUpdate`. Resolves the active profile, applies prices, regenerates the flea. |
+| `RegenerationTimer.cs` | Tracks elapsed time and interval checks for price regenerations. |
 | `PriceTable.cs` | Loads the day-indexed curves and bakes them down to per-level prices. |
 | `FleaNoise.cs` | Stateless market price walk. Port of `analysis/fleanoise.py`. |
 | `Config.cs` | Two-tier config with range clamping. |

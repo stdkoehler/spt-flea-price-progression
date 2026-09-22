@@ -121,7 +121,4 @@ public static class FleaNoise
     {
         return Math.Exp(Math.Min(sigma, sigmaCap) * Z(SeedOf(templateId, world), hour));
     }
-
-    /// <summary>Wall-clock hour index. The price walk advances on its own between raids.</summary>
-    public static double CurrentHour() => DateTimeOffset.UtcNow.ToUnixTimeSeconds() / 3600.0;
 }
