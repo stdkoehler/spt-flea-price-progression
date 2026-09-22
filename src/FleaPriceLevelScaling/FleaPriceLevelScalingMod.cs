@@ -103,7 +103,12 @@ public class FleaPriceLevelScalingMod(
         logger.Success($"{Tag} Loaded {_table.LevelPrice.Count} item curves " +
                        $"from {_table.Info.Snapshots} real flea snapshots " +
                        $"(season day {_config.Debug.StartDay:0} -> {_config.Debug.EndDay:0} " +
-                       $"across levels {_config.Debug.FleaUnlockLevel}-{_table.MaxLevel}).");
+                       $"across levels {_config.Debug.FleaUnlockLevel}-{_table.MaxLevel}) | " +
+                       $"intensityExponent: {_config.IntensityExponent}, " +
+                       $"scalingMaxLevel: {_config.ScalingMaxLevel}, " +
+                       $"priceShockSize: {_config.PriceShockSize}, " +
+                       $"noise.enabled: {_config.Noise.Enabled}, " +
+                       $"noise.amplitudeScale: {_config.Noise.AmplitudeScale}");
 
         Apply(regenerateRagfair: false);
         return Task.CompletedTask;
@@ -112,6 +117,8 @@ public class FleaPriceLevelScalingMod(
     public Task<bool> OnUpdateAsync(long secondsSinceLastRun, CancellationToken cancellationToken)
     {
         if (!_active || secondsSinceLastRun < UpdateIntervalSeconds) return Task.FromResult(false);
+
+        logger.Info($"{Tag} Entering 120s update callback ({secondsSinceLastRun}s elapsed).");
 
         try
         {
@@ -145,11 +152,21 @@ public class FleaPriceLevelScalingMod(
         if (level == _lastLevel && hour == _lastHour && world == _lastWorld) return;
 
         var firstRun = _lastLevel < 0;
+        var levelChanged = level != _lastLevel && !firstRun;
+        var hourChanged = hour != _lastHour && !firstRun;
+
         if (firstRun && _config.Debug.LogWorldSeed)
+        {
             logger.Info($"{Tag} Market seed {world} (include this in bug reports). " +
                         $"Player level {level}.");
-        else if (level != _lastLevel && !firstRun)
-            logger.Info($"{Tag} Player level {_lastLevel} -> {level}, reprising flea.");
+        }
+        else if (!firstRun)
+        {
+            if (levelChanged)
+                logger.Info($"{Tag} Player level {_lastLevel} -> {level}, reprising flea.");
+            if (hourChanged)
+                logger.Info($"{Tag} Hourly update triggered (hour {_lastHour} -> {hour}), reprising flea.");
+        }
 
         _lastLevel = level;
         _lastHour = hour;
@@ -197,6 +214,13 @@ public class FleaPriceLevelScalingMod(
         }
 
         RegenerateRagfair();
+
+        if (hourChanged && levelChanged)
+            logger.Info($"{Tag} Successfully recreated {updated} prices due to hourly update and player level change.");
+        else if (hourChanged)
+            logger.Info($"{Tag} Successfully recreated {updated} prices due to hourly update.");
+        else if (levelChanged)
+            logger.Info($"{Tag} Successfully recreated {updated} prices due to player level update.");
     }
 
     /// <summary>Expire and rebuild the dynamic flea so offers use the new prices.</summary>
