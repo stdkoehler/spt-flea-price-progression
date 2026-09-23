@@ -179,6 +179,8 @@ public class FleaPriceLevelScalingMod(
         {
             if (levelChanged)
                 logger.Info($"{Tag} Player level {_lastLevel} -> {level}, repricing flea.");
+            if (worldChanged)
+                logger.Info($"{Tag} Market seed changed {_lastWorld} -> {world}, repricing flea.");
             if (timeChanged)
             {
                 var elapsedMinutes = (int)Math.Round(elapsed.TotalMinutes);
@@ -238,12 +240,12 @@ public class FleaPriceLevelScalingMod(
         RegenerateRagfair();
 
         var lowerDesc = intervalDesc.ToLowerInvariant();
-        if (timeChanged && levelChanged)
-            logger.Info($"{Tag} Successfully recreated {updated} prices due to {lowerDesc} update and player level change.");
-        else if (timeChanged)
-            logger.Info($"{Tag} Successfully recreated {updated} prices due to {lowerDesc} update.");
-        else if (levelChanged)
-            logger.Info($"{Tag} Successfully recreated {updated} prices due to player level update.");
+        var reasons = new List<string>();
+        if (timeChanged) reasons.Add($"{lowerDesc} update");
+        if (levelChanged) reasons.Add("player level update");
+        if (worldChanged) reasons.Add("market seed update");
+        var reasonText = reasons.Count > 0 ? string.Join(" and ", reasons) : "update";
+        logger.Info($"{Tag} Successfully recreated {updated} prices due to {reasonText}.");
     }
 
     /// <summary>Expire and rebuild the dynamic flea so offers use the new prices.</summary>
