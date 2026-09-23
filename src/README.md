@@ -20,11 +20,23 @@ cd tests/NoiseVectorTest
 dotnet run
 ```
 
+or
+
+```bash
+dotnet run --project tests/NoiseVectorTest/NoiseVectorTest.csproj
+```
+
 ## Build
 
 ```bash
 cd src/FleaPriceLevelScaling
 dotnet build -c Release
+```
+
+or
+
+```bash
+dotnet build spt-flea-price-level-scaling.sln
 ```
 
 Output in `bin/Release/FleaPriceLevelScaling/`: 
