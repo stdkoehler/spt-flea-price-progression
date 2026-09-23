@@ -4,7 +4,7 @@ Edit `config.jsonc`:
 |---|---|---|---|
 | `enabled` | `true` | - | Turn the mod off without uninstalling it. |
 | `intensityExponent` | `1.0` | `0` - `10` | How hard prices react to your level. `0` = no scaling. `1` = as real economy. `2` = increased swing. |
-| `troughLevel` | `21` | `15` - `79` | The level where prices hit rock bottom. Above it inflation begins. `18` = steep crash, `25` = gentle decline, `15` = skip crash entirely. |
+| `troughLevel` | `21` | `15` - `79` | The level where prices hit rock bottom. Above it inflation begins. `18` = steep crash, `25` = gentle decline, `15` = skip crash entirely (inflation only). |
 | `scalingMaxLevel` | `60` | `16` - `79` | The level where the season runs out. Above it, prices stop trending and only drift. |
 | `priceShockSize` | `4.0` | `1` - `20` | How violent occasional price spikes are. `1` = no shocks, just gentle drift. |
 | `noise.enabled` | `true` | - | Whether prices drift day to day at all. |

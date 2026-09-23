@@ -39,10 +39,8 @@ public class FleaPriceLevelScalingMod(
 {
     private const string Tag = "[FleaPriceLevelScaling]";
 
-    /// <summary>How often to re-check level and time. Clamped to at most 120s or the configured
-    /// regeneration interval in seconds.</summary>
-    private long CheckIntervalSeconds =>
-        Math.Clamp((long)Math.Max(2, _config.Debug.RegenerationIntervalMinutes) * 60, 10, 120);
+    /// <summary>How often to re-check level and time.</summary>
+    private const long CheckIntervalSeconds = 120;
 
     private Config _config = new();
     private PriceTable? _table;
@@ -52,7 +50,7 @@ public class FleaPriceLevelScalingMod(
 
     private int _lastLevel = -1;
     private ulong _lastWorld;
-    private readonly RegenerationTimer _regenerationTimer = new();
+    private DateTimeOffset _lastRegenerationUtc = DateTimeOffset.MinValue;
 
     private string ModFolder => modHelper.GetAbsolutePathToModFolder(Assembly.GetExecutingAssembly());
 
@@ -156,7 +154,9 @@ public class FleaPriceLevelScalingMod(
 
         var intervalMinutes = Math.Max(2, _config.Debug.RegenerationIntervalMinutes);
         var interval = TimeSpan.FromMinutes(intervalMinutes);
-        var intervalElapsed = _regenerationTimer.IsDue(interval, out var elapsed);
+        var now = DateTimeOffset.UtcNow;
+        var elapsed = _lastRegenerationUtc == DateTimeOffset.MinValue ? TimeSpan.Zero : now - _lastRegenerationUtc;
+        var intervalElapsed = _lastRegenerationUtc == DateTimeOffset.MinValue || elapsed >= interval;
 
         var pmc = ResolveActiveProfile();
         var level = Math.Clamp(pmc?.Info?.Level ?? _config.Debug.FleaUnlockLevel, 1, _table.MaxLevel);
@@ -169,7 +169,7 @@ public class FleaPriceLevelScalingMod(
 
         if (!firstRun && !levelChanged && !timeChanged && !worldChanged) return;
 
-        var intervalDesc = RegenerationTimer.FormatIntervalDescription(intervalMinutes);
+        var intervalDesc = intervalMinutes == 60 ? "Hourly" : $"{intervalMinutes}-minute";
 
         if (firstRun && _config.Debug.LogWorldSeed)
         {
@@ -193,7 +193,7 @@ public class FleaPriceLevelScalingMod(
         _lastWorld = world;
         if (firstRun || timeChanged)
         {
-            _regenerationTimer.RecordRegeneration();
+            _lastRegenerationUtc = now;
         }
 
         var prices = templateTable.Prices;
@@ -201,7 +201,7 @@ public class FleaPriceLevelScalingMod(
         var noiseOn = _config.Noise.Enabled && _config.Noise.AmplitudeScale > 0;
         var minMult = _config.Debug.PriceBounds.Min;
         var maxMult = _config.Debug.PriceBounds.Max;
-        var currentHour = RegenerationTimer.CurrentMarketHour;
+        var currentHour = CurrentMarketHour();
         var updated = 0;
         var skipped = 0;
 
@@ -273,35 +273,22 @@ public class FleaPriceLevelScalingMod(
 
     /// <summary>
     /// The price table is global but the level is per-profile, so pick the profile
-    /// that is actually playing. When no client is active yet (or multiple profiles
-    /// exist as in Fika), falls back to the highest-level profile found on disk.
+    /// that is actually playing. Falls back to the only profile if there is exactly
+    /// one, which is the normal single-player case before the client connects.
     /// </summary>
     private PmcData? ResolveActiveProfile()
     {
         try
         {
             var activePmcs = profileActivityService.GetActiveProfileIdsWithinMinutes(30)
-                .Select(sessionId => profileHelper.GetPmcProfile(new MongoId(sessionId)))
-                .Where(pmc => pmc?.Info?.Level is not null)
-                .ToList();
+                .Select(sessionId => TryGetPmcProfile(new MongoId(sessionId)));
+            if (PickHighestLevel(activePmcs) is { } activePmc) return activePmc;
 
-            if (activePmcs.Count > 0)
+            var profiles = profileHelper.GetProfiles();
+            if (profiles.Count == 1)
             {
-                return activePmcs.OrderByDescending(p => p!.Info!.Level).ThenBy(p => p!.Id.ToString()).First();
-            }
-
-            var allProfiles = profileHelper.GetProfiles();
-            if (allProfiles.Count > 0)
-            {
-                var allPmcs = allProfiles.Keys
-                    .Select(id => profileHelper.GetPmcProfile(id))
-                    .Where(pmc => pmc?.Info?.Level is not null)
-                    .ToList();
-
-                if (allPmcs.Count > 0)
-                {
-                    return allPmcs.OrderByDescending(p => p!.Info!.Level).ThenBy(p => p!.Id.ToString()).First();
-                }
+                var pmc = TryGetPmcProfile(profiles.Keys.First());
+                if (pmc?.Info?.Level is not null) return pmc;
             }
         }
         catch (Exception ex)
@@ -312,6 +299,26 @@ public class FleaPriceLevelScalingMod(
 
         return null;
     }
+
+    /// <summary>Reads a single profile, isolating a bad one so it cannot fail resolution for others.</summary>
+    private PmcData? TryGetPmcProfile(MongoId id)
+    {
+        try
+        {
+            return profileHelper.GetPmcProfile(id);
+        }
+        catch (Exception ex)
+        {
+            logger.Warning($"{Tag} Could not read profile {id} ({ex.Message}); skipping it.");
+            return null;
+        }
+    }
+
+    private static PmcData? PickHighestLevel(IEnumerable<PmcData?> pmcs) =>
+        pmcs.Where(pmc => pmc?.Info?.Level is not null)
+            .OrderByDescending(p => p!.Info!.Level)
+            .ThenBy(p => p!.Id.ToString())
+            .FirstOrDefault();
 
     /// <summary>
     /// Per-playthrough market seed, derived read-only from the profile.
@@ -330,4 +337,7 @@ public class FleaPriceLevelScalingMod(
         try { return FleaNoise.WorldSeed(id, registered); }
         catch { return 0UL; }
     }
+
+    /// <summary>Wall-clock hour index. The price walk advances on its own between raids.</summary>
+    private static double CurrentMarketHour() => DateTimeOffset.UtcNow.ToUnixTimeSeconds() / 3600.0;
 }

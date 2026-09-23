@@ -14,29 +14,29 @@ public class PriceTable
         // Only fields this code actually uses are deserialised. Provenance fields
         // (seasonStart, source, filter, defaultStartDay, ...) stay in the JSON for
         // humans but are deliberately not bound, so nobody edits one expecting an effect.
-        [JsonPropertyName("maxLevel")]  public int MaxLevel { get; set; } = 79;
-        [JsonPropertyName("snapshots")]       public int Snapshots { get; set; }
-        [JsonPropertyName("noise")]           public NoiseMeta? Noise { get; set; }
+        [JsonPropertyName("maxLevel")] public int MaxLevel { get; set; } = 79;
+        [JsonPropertyName("snapshots")] public int Snapshots { get; set; }
+        [JsonPropertyName("noise")] public NoiseMeta? Noise { get; set; }
     }
 
     public sealed class NoiseMeta
     {
-        [JsonPropertyName("unitSd")]        public double UnitSd { get; set; }
+        [JsonPropertyName("unitSd")] public double UnitSd { get; set; }
         [JsonPropertyName("jumpKnotHours")] public double JumpKnotHours { get; set; }
-        [JsonPropertyName("octaves")]       public OctaveMeta[]? Octaves { get; set; }
+        [JsonPropertyName("octaves")] public OctaveMeta[]? Octaves { get; set; }
     }
 
     public sealed class OctaveMeta
     {
         [JsonPropertyName("knotHours")] public double KnotHours { get; set; }
-        [JsonPropertyName("weight")]    public double Weight { get; set; }
+        [JsonPropertyName("weight")] public double Weight { get; set; }
     }
 
     private sealed class Raw
     {
-        [JsonPropertyName("meta")]       public Meta? Meta { get; set; }
-        [JsonPropertyName("dayKnots")]   public double[]? DayKnots { get; set; }
-        [JsonPropertyName("price")]      public Dictionary<string, double[]>? Price { get; set; }
+        [JsonPropertyName("meta")] public Meta? Meta { get; set; }
+        [JsonPropertyName("dayKnots")] public double[]? DayKnots { get; set; }
+        [JsonPropertyName("price")] public Dictionary<string, double[]>? Price { get; set; }
         [JsonPropertyName("noiseSigma")] public Dictionary<string, double>? NoiseSigma { get; set; }
     }
 
@@ -83,44 +83,57 @@ public class PriceTable
         // startDay in the config cannot extrapolate off the end of the data.
         var dayLo = Math.Clamp(config.Debug.StartDay, knots[0], knots[^1]);
         var dayHi = Math.Clamp(config.Debug.EndDay, knots[0], knots[^1]);
-        var dayTrough = Math.Clamp(DefaultTroughDay, dayLo, dayHi);
-
-        // Progression is split into two phases:
-        //   1. unlock -> trough (early price crash down to dayTrough)
-        //   2. trough -> cap    (inflation climb up to dayHi)
-        // Above scalingMaxLevel (cap) the trend holds flat at dayHi while the
-        // price walk (a function of wall-clock hour, never of level) keeps moving.
         var cap = Math.Clamp(config.ScalingMaxLevel, unlock + 1, maxLevel);
         var trough = Math.Clamp(config.TroughLevel, unlock, cap);
+        var dayTrough = Math.Clamp(DefaultTroughDay, dayLo, dayHi);
 
+        var hasTroughDay = dayTrough > dayLo && dayTrough < dayHi;
+
+        // Here we are mapping a player level to a season day
         var days = new double[maxLevel];
         for (var lv = 1; lv <= maxLevel; lv++)
         {
-            if (lv <= unlock)
+            if (!hasTroughDay)
             {
-                days[lv - 1] = dayLo;
+                // Historical trough day falls outside [dayLo, dayHi]: monotonic ramp across entire window
+                if (lv <= unlock) days[lv - 1] = dayLo;
+                else if (lv > cap) days[lv - 1] = dayHi;
+                else days[lv - 1] = dayLo + (lv - (double)unlock) / (cap - unlock) * (dayHi - dayLo);
             }
-            else if (lv <= trough)
+            else if (trough == unlock)
             {
-                var frac = trough == unlock ? 1.0 : (lv - (double)unlock) / (trough - unlock);
-                days[lv - 1] = dayLo + frac * (dayTrough - dayLo);
+                // Trough is at flea unlock: crash phase is skipped entirely.
+                // Starts at rock bottom (dayTrough), followed by the real data inflation phase up to cap.
+                if (lv <= unlock) days[lv - 1] = dayTrough;
+                else if (lv > cap) days[lv - 1] = dayHi;
+                else days[lv - 1] = dayTrough + (lv - (double)unlock) / (cap - unlock) * (dayHi - dayTrough);
             }
-            else if (lv <= cap)
+            else if (trough == cap)
             {
-                var frac = cap == trough ? 1.0 : (lv - (double)trough) / (cap - trough);
-                days[lv - 1] = dayTrough + frac * (dayHi - dayTrough);
+                // Trough is at cap: price decline lasts across the whole progression; no inflation phase.
+                if (lv <= unlock) days[lv - 1] = dayLo;
+                else if (lv > cap) days[lv - 1] = dayTrough;
+                else days[lv - 1] = dayLo + (lv - (double)unlock) / (cap - unlock) * (dayTrough - dayLo);
             }
             else
             {
-                days[lv - 1] = dayHi;
+                // Standard two-phase progression:
+                // Phase 1 (crash): unlock -> trough spans dayLo -> dayTrough
+                // Phase 2 (inflation): trough -> cap spans dayTrough -> dayHi
+                if (lv <= unlock) days[lv - 1] = dayLo;
+                else if (lv <= trough) days[lv - 1] = dayLo + (lv - (double)unlock) / (trough - unlock) * (dayTrough - dayLo);
+                else if (lv <= cap) days[lv - 1] = dayTrough + (lv - (double)trough) / (cap - trough) * (dayHi - dayTrough);
+                else days[lv - 1] = dayHi;
             }
         }
 
+        // Now we iterate over the item prices and calculate the price at each level through 
+        // the "player level to day" mapping we created above. 
         foreach (var (id, curve) in raw.Price)
         {
             if (curve.Length != knots.Length) continue;
 
-            var anchor = Interpolate(knots, curve, dayLo);
+            var anchor = Interpolate(knots, curve, days[unlock - 1]);
             if (anchor <= 0) continue;
 
             var levels = new double[maxLevel];

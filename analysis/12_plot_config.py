@@ -50,7 +50,8 @@ a.set_title("troughLevel: price decline gradient and trough", fontsize=11)
 a = ax["scaling_max"]
 for cap, c in zip([40, 50, 60, 79], ["#c0392b", "#e67e22", "#2980b9", "#7f8c8d"]):
     cv = pd.DataFrame({k: F.level_curve(P[k].to_numpy(), P.index.to_numpy(),
-                                        F.MAP_DAY_LO, F.MAP_DAY_HI, scaling_max=cap)
+                                        F.MAP_DAY_LO, F.MAP_DAY_HI, scaling_max=cap,
+                                        trough_level=F.TROUGH_LEVEL)
                        for k in P.columns}, index=LV)
     m = cv.div(cv.loc[F.FLEA_UNLOCK], axis=1).median(axis=1)
     a.plot(LV[14:], m.loc[15:], lw=2.4 if cap == F.SCALING_MAX else 1.8, color=c,

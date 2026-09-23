@@ -5,7 +5,7 @@
 set -euo pipefail
 
 # Ensure dotnet in PATH on Windows Git Bash environments if not already present
-export PATH="$PATH:/c/Program Files/dotnet"
+export PATH="/c/Program Files/dotnet:$PATH"
 
 cd "$(dirname "${BASH_SOURCE[0]}")"
 

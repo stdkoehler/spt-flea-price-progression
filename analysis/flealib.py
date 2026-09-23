@@ -136,18 +136,29 @@ def level_curve(day_curve, day_knots, start_day, end_day, scaling_max=None,
     """
     lv = LEVELS.astype(float)
     cap = SCALING_MAX if scaling_max is None else scaling_max
-    if trough_level is None:
+    lo = float(start_day)
+    hi = float(end_day)
+    tr_d = MAP_DAY_TROUGH if trough_day is None else trough_day
+    tr_day = np.clip(tr_d, lo, hi)
+    tr = cap if trough_level is None else np.clip(trough_level, FLEA_UNLOCK, cap)
+
+    has_trough_day = (trough_level is not None and lo < tr_day < hi)
+
+    if not has_trough_day:
         frac = np.clip((lv - FLEA_UNLOCK) / (cap - FLEA_UNLOCK), 0, 1)
-        days = start_day + frac * (end_day - start_day)
+        days = lo + frac * (hi - lo)
+    elif tr == FLEA_UNLOCK:
+        frac = np.clip((lv - FLEA_UNLOCK) / (cap - FLEA_UNLOCK), 0, 1)
+        days = tr_day + frac * (hi - tr_day)
+    elif tr == cap:
+        frac = np.clip((lv - FLEA_UNLOCK) / (cap - FLEA_UNLOCK), 0, 1)
+        days = lo + frac * (tr_day - lo)
     else:
-        tr = np.clip(trough_level, FLEA_UNLOCK, cap)
-        tr_day = (start_day + (TROUGH_LEVEL - FLEA_UNLOCK) / (SCALING_MAX - FLEA_UNLOCK) * (end_day - start_day)
-                  if trough_day is None else trough_day)
-        f_dec = np.clip((lv - FLEA_UNLOCK) / max(tr - FLEA_UNLOCK, 1e-9), 0, 1)
-        f_clb = np.clip((lv - tr) / max(cap - tr, 1e-9), 0, 1)
+        f_dec = np.clip((lv - FLEA_UNLOCK) / (tr - FLEA_UNLOCK), 0, 1)
+        f_clb = np.clip((lv - tr) / (cap - tr), 0, 1)
         days = np.where(lv <= tr,
-                        start_day + f_dec * (tr_day - start_day),
-                        tr_day + f_clb * (end_day - tr_day))
-        days = np.clip(days, start_day, end_day)
+                        lo + f_dec * (tr_day - lo),
+                        tr_day + f_clb * (hi - tr_day))
+        days = np.clip(days, lo, hi)
 
     return np.interp(days, day_knots, day_curve)

@@ -59,7 +59,7 @@ Most interesting settings for customization
 |---|---|---|---|
 | `enabled` | `true` | - | Turn the mod off without uninstalling it. |
 | `intensityExponent` | `1.0` | `0.0` - `10.0` | How hard prices react to your level. `0` = no scaling at all. `1` = as real economy. `2` = increased swing. |
-| `troughLevel` | `21` | `15` - `79` | The level where prices hit rock bottom. Above it inflation begins. `18` = steep crash, `25` = gentle decline, `15` = skip crash entirely. |
+| `troughLevel` | `21` | `15` - `79` | The level where prices hit rock bottom. Above it inflation begins. `18` = steep crash, `25` = gentle decline, `15` = skip crash entirely (inflation only). |
 | `scalingMaxLevel` | `60` | - | The level where the season runs out. Above it prices stop trending and only drift. `79` = stretch the season over every level, `40` = a fast, compressed economy. |
 | `priceShockSize` | `4.0` | `1.0` - `20.0` | How violent occasional price spikes are. `1` = no shocks, just gentle drift. `4` = as seen in real flea data. |
 | `noise.enabled` | `true` | - | Whether prices drift day to day at all. `false` = perfectly smooth, prices only move when you level and follow the filtered median. |
@@ -98,8 +98,8 @@ Because flea prices in EFT are global across the server, the mod resolves profil
 ### Scenarios & Behavior
 
 1. **Server Start (no players connected yet):**
-   - The mod inspects all profiles stored on disk in `user/profiles/` and initializes the market using the **highest PMC level found**.
-   - *Example:* If you have a Level 15 profile and a Level 17 profile on disk, the server starts up with base prices anchored to **Level 17**.
+   - If exactly one profile exists on disk (standard single-player), the server initializes immediately using that character's level.
+   - If multiple profiles exist on disk (FIKA / multi-character installs), flea prices without an active player don't make sense, so the server starts at default baseline (level 15) and waits for a player to log in before adapting.
 
 2. **Single-Player (Local server or solo on FIKA):**
    - When a player logs in, their profile is marked active.

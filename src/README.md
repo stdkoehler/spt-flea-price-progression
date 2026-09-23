@@ -5,7 +5,6 @@ Builds against **SPT 4.1.x** / .NET 10.
 | File | Role |
 |---|---|
 | `FleaPriceLevelScalingMod.cs` | `IOnLoad` + `IOnUpdate`. Resolves the active profile, applies prices, regenerates the flea. |
-| `RegenerationTimer.cs` | Tracks elapsed time and interval checks for price regenerations. |
 | `PriceTable.cs` | Loads the day-indexed curves and bakes them down to per-level prices. |
 | `FleaNoise.cs` | Stateless market price walk. Port of `analysis/fleanoise.py`. |
 | `Config.cs` | Two-tier config with range clamping. |
@@ -93,10 +92,10 @@ Items absent from the table (`pegged` and `sparse`, ~700) keep SPT's default pri
 
 ## Profile access
 
-Read-only. `ProfileActivityService.GetActiveProfileIdsWithinMinutes(30)` finds all actively playing profiles and selects the PMC with the highest level. If no player is currently active (such as during server startup), the mod inspects all profiles on disk in `user/profiles/` and defaults to the highest PMC level found.
+Read-only. `ProfileActivityService.GetActiveProfileIdsWithinMinutes(30)` finds all actively playing profiles and selects the PMC with the highest level. If no player is currently active, the mod falls back to the single profile on disk if exactly one exists (standard single-player setup). When multiple profiles exist (FIKA / multi-character installs), it starts at baseline level 15 and waits for an active player before scaling.
 
 This ensures seamless support for both local single-player setups and multiplayer / FIKA servers:
-- **Server boot (offline):** Base flea prices are anchored to the highest PMC level on disk instead of blindly defaulting to level 15.
+- **Server boot (offline):** If exactly one profile exists, base flea prices are anchored to that character's level immediately; if multiple exist, the server waits for an active session.
 - **Solo play:** When a player logs in, the flea market smoothly adapts to their active level.
 - **FIKA co-op:** When multiple friends play concurrently, flea prices scale to the highest level among all currently active players.
 

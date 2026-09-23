@@ -19,7 +19,7 @@
   //   18  = steep crash (bottoms out in just 3 levels)
   //   25  = gentle, extended decline across 10 levels
   //   30  = very gradual price drop
-  //   15  = skips the price crash entirely (pure inflation from unlock)
+  //   15  = skips the price crash entirely (starts at rock bottom, inflation only)
   "troughLevel": 21,
 
   // The level at which the season runs out. Above it prices stop trending and

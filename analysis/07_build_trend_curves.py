@@ -77,23 +77,36 @@ def _vector_curve(curve, start, end, intensity, scaling_max,
                   trough_level=F.TROUGH_LEVEL):
     lo = min(max(start, knots[0]), knots[-1])
     hi = min(max(end, knots[0]), knots[-1])
-    tr_day = min(max(F.MAP_DAY_TROUGH, lo), hi)
     cap = min(max(scaling_max, unlock + 1), max_level)
     tr = min(max(trough_level, unlock), cap)
+    tr_day = min(max(F.MAP_DAY_TROUGH, lo), hi)
 
-    anchor = float(np.interp(lo, knots, curve))
-    out = []
+    has_trough_day = lo < tr_day < hi
+
+    days = []
     for lv in range(1, max_level + 1):
-        if lv <= unlock:
-            day = lo
-        elif lv <= tr:
-            frac = 1.0 if tr == unlock else (lv - unlock) / (tr - unlock)
-            day = lo + frac * (tr_day - lo)
-        elif lv <= cap:
-            frac = 1.0 if cap == tr else (lv - tr) / (cap - tr)
-            day = tr_day + frac * (hi - tr_day)
+        if not has_trough_day:
+            if lv <= unlock: day = lo
+            elif lv > cap: day = hi
+            else: day = lo + (lv - unlock) / (cap - unlock) * (hi - lo)
+        elif tr == unlock:
+            if lv <= unlock: day = tr_day
+            elif lv > cap: day = hi
+            else: day = tr_day + (lv - unlock) / (cap - unlock) * (hi - tr_day)
+        elif tr == cap:
+            if lv <= unlock: day = lo
+            elif lv > cap: day = tr_day
+            else: day = lo + (lv - unlock) / (cap - unlock) * (tr_day - lo)
         else:
-            day = hi
+            if lv <= unlock: day = lo
+            elif lv <= tr: day = lo + (lv - unlock) / (tr - unlock) * (tr_day - lo)
+            elif lv <= cap: day = tr_day + (lv - tr) / (cap - tr) * (hi - tr_day)
+            else: day = hi
+        days.append(day)
+
+    anchor = float(np.interp(days[unlock - 1], knots, curve))
+    out = []
+    for day in days:
         val = float(np.interp(day, knots, curve))
         ratio = val / anchor if anchor > 0 else 1.0
         out.append(anchor * ratio ** intensity)
@@ -113,6 +126,8 @@ _VEC_CFGS = [
     dict(name="trough-18",      startDay=10.0, endDay=249.0,  intensityExponent=1.0, scalingMaxLevel=F.SCALING_MAX, troughLevel=18),
     dict(name="trough-25",      startDay=10.0, endDay=249.0,  intensityExponent=1.0, scalingMaxLevel=F.SCALING_MAX, troughLevel=25),
     dict(name="trough-30",      startDay=10.0, endDay=249.0,  intensityExponent=1.0, scalingMaxLevel=F.SCALING_MAX, troughLevel=30),
+    dict(name="trough-at-unlock", startDay=10.0, endDay=249.0, intensityExponent=1.0, scalingMaxLevel=F.SCALING_MAX, troughLevel=F.FLEA_UNLOCK),
+    dict(name="trough-at-cap",    startDay=10.0, endDay=249.0, intensityExponent=1.0, scalingMaxLevel=F.SCALING_MAX, troughLevel=F.SCALING_MAX),
 ]
 _VEC_LEVELS = [1, 14, 15, 16, 20, 40, 60, 79]
 
