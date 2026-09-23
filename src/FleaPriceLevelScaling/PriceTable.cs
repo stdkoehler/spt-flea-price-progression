@@ -40,6 +40,12 @@ public class PriceTable
         [JsonPropertyName("noiseSigma")] public Dictionary<string, double>? NoiseSigma { get; set; }
     }
 
+    /// <summary>
+    /// Season day where median flea prices reach rock bottom in the live data (~day 41.87).
+    /// Under the default linear mapping (10 -> 60), this day maps to level 21.
+    /// </summary>
+    public const double DefaultTroughDay = 41.86666666666667;
+
     public Meta Info { get; private set; } = new();
 
     /// <summary>templateId -> price at each level, index 0 = level 1.</summary>
@@ -77,17 +83,37 @@ public class PriceTable
         // startDay in the config cannot extrapolate off the end of the data.
         var dayLo = Math.Clamp(config.Debug.StartDay, knots[0], knots[^1]);
         var dayHi = Math.Clamp(config.Debug.EndDay, knots[0], knots[^1]);
+        var dayTrough = Math.Clamp(DefaultTroughDay, dayLo, dayHi);
 
-        // endDay maps to scalingMaxLevel, NOT to maxLevel. Above the cap the
-        // clamp below pins frac at 1.0, so the trend holds at dayHi while the
+        // Progression is split into two phases:
+        //   1. unlock -> trough (early price crash down to dayTrough)
+        //   2. trough -> cap    (inflation climb up to dayHi)
+        // Above scalingMaxLevel (cap) the trend holds flat at dayHi while the
         // price walk (a function of wall-clock hour, never of level) keeps moving.
         var cap = Math.Clamp(config.ScalingMaxLevel, unlock + 1, maxLevel);
+        var trough = Math.Clamp(config.TroughLevel, unlock, cap);
 
         var days = new double[maxLevel];
         for (var lv = 1; lv <= maxLevel; lv++)
         {
-            var frac = Math.Clamp((lv - (double)unlock) / (cap - unlock), 0.0, 1.0);
-            days[lv - 1] = dayLo + frac * (dayHi - dayLo);
+            if (lv <= unlock)
+            {
+                days[lv - 1] = dayLo;
+            }
+            else if (lv <= trough)
+            {
+                var frac = trough == unlock ? 1.0 : (lv - (double)unlock) / (trough - unlock);
+                days[lv - 1] = dayLo + frac * (dayTrough - dayLo);
+            }
+            else if (lv <= cap)
+            {
+                var frac = cap == trough ? 1.0 : (lv - (double)trough) / (cap - trough);
+                days[lv - 1] = dayTrough + frac * (dayHi - dayTrough);
+            }
+            else
+            {
+                days[lv - 1] = dayHi;
+            }
         }
 
         foreach (var (id, curve) in raw.Price)

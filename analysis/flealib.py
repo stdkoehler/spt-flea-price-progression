@@ -46,6 +46,13 @@ MAP_DAY_HI   = DATA_DAY_HI
 # measurement: the snapshots carry prices, never player levels.
 SCALING_MAX  = 60
 
+# Under the default linear mapping (15 -> 60), the median item price reaches
+# its trough at level 21 (season day ~41.87). Exposing troughLevel allows the
+# early price decline gradient and the inflection point to be tuned independently
+# from the late-season inflation cap.
+TROUGH_LEVEL    = 21
+MAP_DAY_TROUGH  = MAP_DAY_LO + (TROUGH_LEVEL - FLEA_UNLOCK) / (SCALING_MAX - FLEA_UNLOCK) * (MAP_DAY_HI - MAP_DAY_LO)
+
 # Day knots stored in the artefact: every 3 days over the usable range.
 # Measured reconstruction error vs a daily curve: median 0.04%, p95 4.0%.
 DAY_KNOTS = np.arange(DATA_DAY_LO, DATA_DAY_HI + 1e-9, 3.0)
@@ -116,13 +123,31 @@ def artifact_mask(df):
     return fin & (V < ARTIFACT_REL * med) & (V < ARTIFACT_ABS)
 
 # ---------------------------------------------------------------- mod-side ops
-def level_curve(day_curve, day_knots, start_day, end_day, scaling_max=None):
+def level_curve(day_curve, day_knots, start_day, end_day, scaling_max=None,
+                trough_level=None, trough_day=None):
     """Resample a day-indexed curve onto levels 1..LVL_MAX.
 
     Below the flea unlock and above scaling_max the fraction clamps, so the
     trend is flat at both ends and only the price walk moves there.
+
+    If trough_level is specified, the progression is split into two linear segments:
+      - flea unlock -> trough_level (early price decline towards trough_day)
+      - trough_level -> scaling_max (inflation climb towards end_day)
     """
     lv = LEVELS.astype(float)
     cap = SCALING_MAX if scaling_max is None else scaling_max
-    frac = np.clip((lv - FLEA_UNLOCK) / (cap - FLEA_UNLOCK), 0, 1)
-    return np.interp(start_day + frac * (end_day - start_day), day_knots, day_curve)
+    if trough_level is None:
+        frac = np.clip((lv - FLEA_UNLOCK) / (cap - FLEA_UNLOCK), 0, 1)
+        days = start_day + frac * (end_day - start_day)
+    else:
+        tr = np.clip(trough_level, FLEA_UNLOCK, cap)
+        tr_day = (start_day + (TROUGH_LEVEL - FLEA_UNLOCK) / (SCALING_MAX - FLEA_UNLOCK) * (end_day - start_day)
+                  if trough_day is None else trough_day)
+        f_dec = np.clip((lv - FLEA_UNLOCK) / max(tr - FLEA_UNLOCK, 1e-9), 0, 1)
+        f_clb = np.clip((lv - tr) / max(cap - tr, 1e-9), 0, 1)
+        days = np.where(lv <= tr,
+                        start_day + f_dec * (tr_day - start_day),
+                        tr_day + f_clb * (end_day - tr_day))
+        days = np.clip(days, start_day, end_day)
+
+    return np.interp(days, day_knots, day_curve)

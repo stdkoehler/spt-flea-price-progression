@@ -70,18 +70,31 @@ p = F.MOD_DATA / "price_curves.json"
 json.dump(art, open(p, "w"), separators=(",", ":"))
 print(f"\nwrote {p}  ({p.stat().st_size/1e6:.2f} MB)")
 
-# ---------------------------------------------------------------- test vectors
 # Mirrors PriceTable.Load in C# exactly, so tests/NoiseVectorTest can prove the
 # port agrees. Regenerated here so the vectors can never go stale silently.
 def _vector_curve(curve, start, end, intensity, scaling_max,
-                  unlock=F.FLEA_UNLOCK, max_level=F.LVL_MAX):
+                  unlock=F.FLEA_UNLOCK, max_level=F.LVL_MAX,
+                  trough_level=F.TROUGH_LEVEL):
     lo = min(max(start, knots[0]), knots[-1])
     hi = min(max(end, knots[0]), knots[-1])
+    tr_day = min(max(F.MAP_DAY_TROUGH, lo), hi)
+    cap = min(max(scaling_max, unlock + 1), max_level)
+    tr = min(max(trough_level, unlock), cap)
+
     anchor = float(np.interp(lo, knots, curve))
     out = []
     for lv in range(1, max_level + 1):
-        frac = min(max((lv - unlock) / (scaling_max - unlock), 0.0), 1.0)
-        val = float(np.interp(lo + frac * (hi - lo), knots, curve))
+        if lv <= unlock:
+            day = lo
+        elif lv <= tr:
+            frac = 1.0 if tr == unlock else (lv - unlock) / (tr - unlock)
+            day = lo + frac * (tr_day - lo)
+        elif lv <= cap:
+            frac = 1.0 if cap == tr else (lv - tr) / (cap - tr)
+            day = tr_day + frac * (hi - tr_day)
+        else:
+            day = hi
+        val = float(np.interp(day, knots, curve))
         ratio = val / anchor if anchor > 0 else 1.0
         out.append(anchor * ratio ** intensity)
     return out
@@ -97,6 +110,9 @@ _VEC_CFGS = [
     dict(name="clamped-days",   startDay=-50.0, endDay=9999.0, intensityExponent=0.5, scalingMaxLevel=F.SCALING_MAX),
     dict(name="uncapped-79",    startDay=10.0, endDay=249.0,  intensityExponent=1.0, scalingMaxLevel=79),
     dict(name="cap-40",         startDay=10.0, endDay=249.0,  intensityExponent=1.0, scalingMaxLevel=40),
+    dict(name="trough-18",      startDay=10.0, endDay=249.0,  intensityExponent=1.0, scalingMaxLevel=F.SCALING_MAX, troughLevel=18),
+    dict(name="trough-25",      startDay=10.0, endDay=249.0,  intensityExponent=1.0, scalingMaxLevel=F.SCALING_MAX, troughLevel=25),
+    dict(name="trough-30",      startDay=10.0, endDay=249.0,  intensityExponent=1.0, scalingMaxLevel=F.SCALING_MAX, troughLevel=30),
 ]
 _VEC_LEVELS = [1, 14, 15, 16, 20, 40, 60, 79]
 
@@ -111,7 +127,8 @@ for _cfg in _VEC_CFGS:
         # difference is enough to fail a 1e-12 comparison.
         _c = _vector_curve(np.array(art["price"][_it], float),
                            _cfg["startDay"], _cfg["endDay"],
-                           _cfg["intensityExponent"], _cfg["scalingMaxLevel"])
+                           _cfg["intensityExponent"], _cfg["scalingMaxLevel"],
+                           trough_level=_cfg.get("troughLevel", F.TROUGH_LEVEL))
         _case["items"][_it] = {str(lv): _c[lv - 1] for lv in _VEC_LEVELS}
     vectors["cases"].append(_case)
 _vp = F.MOD_DATA / "pricetable_test_vectors.json"

@@ -15,10 +15,13 @@ lvl = pd.DataFrame({c: F.level_curve(P[c].to_numpy(), P.index.to_numpy(),
 mult = lvl.div(lvl.loc[F.FLEA_UNLOCK], axis=1)
 idx = mult.median(axis=1)
 
-fig, ax = plt.subplots(2, 2, figsize=(14, 9))
+fig, ax = plt.subplot_mosaic([
+    ["intensity", "intensity", "trough", "trough", "scaling_max", "scaling_max"],
+    ["noise", "noise", "noise", "shock", "shock", "shock"]
+], figsize=(18, 9.5))
 
 # ---- (a) intensityExponent
-a = ax[0, 0]
+a = ax["intensity"]
 for k, c in zip([0.0, 0.5, 1.0, 2.0, 3.0], plt.cm.viridis(np.linspace(0, .9, 5))):
     a.plot(LV[14:], idx.loc[15:] ** k, lw=2.2, color=c, label=f"{k}")
 a.axhline(1, ls=":", c="grey"); a.set_xlim(15, 79); a.grid(alpha=.3)
@@ -26,9 +29,25 @@ a.legend(title="intensityExponent", fontsize=9); a.set_xlabel("player level")
 a.set_ylabel("price x (level 15 = 1.0)")
 a.set_title("intensityExponent: scaling factor (1.0 as live data)", fontsize=11)
 
-# ---- (b) scalingMaxLevel
+# ---- (b) troughLevel
+# the level prices reach their lowest point; tunes early price decline gradient
+a = ax["trough"]
+for tr, c in zip([18, 21, 25, 30], ["#c0392b", "#2980b9", "#27ae60", "#8e44ad"]):
+    cv = pd.DataFrame({k: F.level_curve(P[k].to_numpy(), P.index.to_numpy(),
+                                        F.MAP_DAY_LO, F.MAP_DAY_HI, trough_level=tr)
+                       for k in P.columns}, index=LV)
+    m = cv.div(cv.loc[F.FLEA_UNLOCK], axis=1).median(axis=1)
+    a.plot(LV[14:], m.loc[15:], lw=2.4 if tr == F.TROUGH_LEVEL else 1.8, color=c,
+           label=f"{tr}" + ("  (default)" if tr == F.TROUGH_LEVEL else ""))
+    a.plot([tr], [m.loc[tr]], "o", ms=6, color=c, zorder=5)
+a.axhline(1, ls=":", c="grey"); a.set_xlim(15, 79); a.grid(alpha=.3)
+a.legend(title="troughLevel", fontsize=9, ncol=2)
+a.set_xlabel("player level"); a.set_ylabel("price x (level 15 = 1.0)")
+a.set_title("troughLevel: price decline gradient and trough", fontsize=11)
+
+# ---- (c) scalingMaxLevel
 # the level the season runs out at; above it the trend is held and only noise moves
-a = ax[0, 1]
+a = ax["scaling_max"]
 for cap, c in zip([40, 50, 60, 79], ["#c0392b", "#e67e22", "#2980b9", "#7f8c8d"]):
     cv = pd.DataFrame({k: F.level_curve(P[k].to_numpy(), P.index.to_numpy(),
                                         F.MAP_DAY_LO, F.MAP_DAY_HI, scaling_max=cap)
@@ -42,14 +61,14 @@ a.legend(title="scalingMaxLevel", fontsize=9, ncol=2)
 a.set_xlabel("player level"); a.set_ylabel("price x (level 15 = 1.0)")
 a.set_title("scalingMaxLevel: inflation gradient and cap", fontsize=11)
 
-# ---- (c) noise.amplitudeScale
+# ---- (d) noise.amplitudeScale
 ITEM = "5447a9cd4bdc2dbd208b4567"          # Colt M4A1, sigma 0.31 - visibly restless
 days = np.linspace(0, 90, 2600)
 level = F.FLEA_UNLOCK + days / 90 * (F.LVL_MAX - F.FLEA_UNLOCK)
 hours = pd.Timestamp("2026-01-01T00:00:00Z").value / 1e9 / 3600 + days * 24
 trend = np.interp(level, LV, lvl[ITEM])
 world = N.world_seed("5c0530ee86f774697952d952", 1763200000)
-a = ax[1, 0]
+a = ax["noise"]
 a.plot(days, trend, lw=3, c="k", zorder=5, label="0.0  (off)")
 for s_, c in zip([0.5, 1.0, 2.0], ["#27ae60", "#2980b9", "#c0392b"]):
     sig = min(float(sd[ITEM]) * s_, 0.5 * s_)
@@ -60,12 +79,12 @@ a.set_xlabel("days into playthrough"); a.set_ylabel("price (RUB)")
 a.yaxis.set_major_formatter(lambda v, p: f"{v/1000:,.0f}k")
 a.set_title("noise.amplitudeScale: day-to-day drift", fontsize=11)
 
-# ---- (d) priceShockSize
+# ---- (e) priceShockSize
 # Deliberately NOT the M4A1: at sigma 0.31 its everyday drift is as tall as a
 # shock, so nothing reads as exceptional. A calm item (sigma ~0.11) whose window
 # happens to hold five shock knots makes the tail behaviour legible instead.
 SHOCK_ITEM = "5d1b376e86f774252519444e"      # Bottle of Fierce Hatchling moonshine
-a = ax[1, 1]
+a = ax["shock"]
 shock_trend = np.interp(level, LV, lvl[SHOCK_ITEM])
 shock_sig = min(float(sd[SHOCK_ITEM]), .5)
 

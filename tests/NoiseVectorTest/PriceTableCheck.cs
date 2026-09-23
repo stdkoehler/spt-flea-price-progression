@@ -22,6 +22,8 @@ public static class PriceTableCheck
                 IntensityExponent = c.GetProperty("intensityExponent").GetDouble(),
                 ScalingMaxLevel = c.GetProperty("scalingMaxLevel").GetInt32()
             };
+            if (c.TryGetProperty("troughLevel", out var tl))
+                cfg.TroughLevel = tl.GetInt32();
             cfg.Debug.StartDay = c.GetProperty("startDay").GetDouble();
             cfg.Debug.EndDay = c.GetProperty("endDay").GetDouble();
             // deliberately NOT sanitised: the vectors exercise raw values,

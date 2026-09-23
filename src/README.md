@@ -65,20 +65,29 @@ cd src/FleaPriceLevelScaling
 Price for one item:
 
 ```
-frac  = clamp((level - fleaUnlockLevel) / (scalingMaxLevel - fleaUnlockLevel), 0, 1)
-day   = startDay + frac * (endDay - startDay)
-base  = interp(dayKnots, price[item], day)
-anchor= interp(dayKnots, price[item], startDay)
+// Two-phase level -> season day mapping:
+if (level <= fleaUnlockLevel)
+    day = startDay
+else if (level <= troughLevel)
+    day = startDay + (level - fleaUnlockLevel) / (troughLevel - fleaUnlockLevel) * (troughDay - startDay)
+else if (level <= scalingMaxLevel)
+    day = troughDay + (level - troughLevel) / (scalingMaxLevel - troughLevel) * (endDay - troughDay)
+else
+    day = endDay
 
-trend = anchor * (base / anchor) ^ intensityExponent      // baked once at load
-final = trend * exp(min(sigma * amplitudeScale, sigmaCap) * Z(item, hour, world))
-final = clamp(final, sptBase * bounds.min, sptBase * bounds.max)
+base   = interp(dayKnots, price[item], day)
+anchor = interp(dayKnots, price[item], startDay)
+
+trend  = anchor * (base / anchor) ^ intensityExponent      // baked once at load
+final  = trend * exp(min(sigma * amplitudeScale, sigmaCap) * Z(item, hour, world))
+final  = clamp(final, sptBase * bounds.min, sptBase * bounds.max)
 ```
 
 
 1. **`intensityExponent` applies to the ratio.** Raising the whole product would scale the base price too and would exponentiate the noise at k=2 a 1.5x spike becomes 2.25x.
 2. **`debug.priceBounds` (`min` and `max`) clamp against SPT's table.** On load, the mod clones `templateTable.Prices` before modifying anything. Every calculated price is clamped to `[sptBase * min, sptBase * max]` (defaults `0.2` and `5.0`, or 20%–500% of the vanilla SPT price). This ensures market shocks or volatile curves never drift into absurd extremes while preserving natural market movement within that envelope.
-3. **`scalingMaxLevel` defines at which player level the price curves end.** `frac` clamps at 1.0 above it, so levels above the cap all resolve to `endDay` and the trend stays flat. SPT's maximum player level (79) is still fully supported: levels from `scalingMaxLevel` up to 79 (including) plateau at that end-of-season price, while the hourly price walk continues to drift on top.
+3. **`troughLevel` defines at which player level the initial price crash bottoms out.** Spans levels `fleaUnlockLevel` -> `troughLevel` across `startDay` -> `troughDay` (default 41.9). Raising it softens and elongates the early-wipe price drop.
+4. **`scalingMaxLevel` defines at which player level the price curves end.** Above it, prices resolve to `endDay` and the trend stays flat. SPT's maximum player level (79) is still fully supported: levels from `scalingMaxLevel` up to 79 (including) plateau at that end-of-season price, while the hourly price walk continues to drift on top.
 
 Items absent from the table (`pegged` and `sparse`, ~700) keep SPT's default price.
 

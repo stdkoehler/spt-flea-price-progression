@@ -14,7 +14,7 @@ public static class SmokeCheck
 
         var cfg = Config.Load(configPath);
         Console.WriteLine($"  config.jsonc parsed: enabled={cfg.Enabled} " +
-                          $"intensity={cfg.IntensityExponent} cap={cfg.ScalingMaxLevel} " +
+                          $"intensity={cfg.IntensityExponent} trough={cfg.TroughLevel} cap={cfg.ScalingMaxLevel} " +
                           $"shock={cfg.PriceShockSize} noise={cfg.Noise.Enabled}/{cfg.Noise.AmplitudeScale}");
         Console.WriteLine($"  debug: startDay={cfg.Debug.StartDay} endDay={cfg.Debug.EndDay} " +
                           $"perPlaythrough={cfg.Debug.PerPlaythrough} sigmaCap={cfg.Debug.SigmaCap} " +

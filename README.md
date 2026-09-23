@@ -59,6 +59,7 @@ Most interesting settings for customization
 |---|---|---|---|
 | `enabled` | `true` | - | Turn the mod off without uninstalling it. |
 | `intensityExponent` | `1.0` | `0.0` - `10.0` | How hard prices react to your level. `0` = no scaling at all. `1` = as real economy. `2` = increased swing. |
+| `troughLevel` | `21` | `15` - `79` | The level where prices hit rock bottom. Above it inflation begins. `18` = steep crash, `25` = gentle decline, `15` = skip crash entirely. |
 | `scalingMaxLevel` | `60` | - | The level where the season runs out. Above it prices stop trending and only drift. `79` = stretch the season over every level, `40` = a fast, compressed economy. |
 | `priceShockSize` | `4.0` | `1.0` - `20.0` | How violent occasional price spikes are. `1` = no shocks, just gentle drift. `4` = as seen in real flea data. |
 | `noise.enabled` | `true` | - | Whether prices drift day to day at all. `false` = perfectly smooth, prices only move when you level and follow the filtered median. |
@@ -69,6 +70,7 @@ Most interesting settings for customization
 Some tuning indicators:
 - **If a few prices occasionally look absurd** (a spike out of nowhere), drop `priceShockSize` to `2.5` or `1.0`. The everyday drift is left alone.
 - **If prices never sit still**, drop `noise.amplitudeScale` to `0.5`. That halves all movement, spikes included.
+- **If early-wipe prices drop far too quickly**, raise `troughLevel` (e.g. to `25` or `30`) so the price decline is spread across more levels.
 - **If you reach level 60 far too quickly**, raise `scalingMaxLevel` so the season is spread over more levels.
 - **If you want a 100% calm and predictable economy**, set `noise.enabled` to `false`. You keep the level-based trend without the random walk.
 

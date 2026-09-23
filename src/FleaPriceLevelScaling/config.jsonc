@@ -13,6 +13,15 @@
   // Applies to the price MULTIPLIER, not the base price.
   "intensityExponent": 1.0,
 
+  // The level where prices hit rock bottom (the trough). Controls the gradient
+  // of the initial early-wipe price decline and where inflation begins.
+  //   21  = default, matches live Tarkov data (crash across levels 15-21)
+  //   18  = steep crash (bottoms out in just 3 levels)
+  //   25  = gentle, extended decline across 10 levels
+  //   30  = very gradual price drop
+  //   15  = skips the price crash entirely (pure inflation from unlock)
+  "troughLevel": 21,
+
   // The level at which the season runs out. Above it prices stop trending and
   // only drift day to day. The real season lasted 250 days, in which live
   // players reached roughly level 50-70 - so there is no real data about what

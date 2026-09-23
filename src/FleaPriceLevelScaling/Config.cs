@@ -15,6 +15,12 @@ public class Config
     public double IntensityExponent { get; set; } = 1.0;
 
     /// <summary>
+    /// Level at which prices hit their lowest point (the trough). Controls the
+    /// gradient of the initial price decline and where inflation begins.
+    /// </summary>
+    public int TroughLevel { get; set; } = 21;
+
+    /// <summary>
     /// Level that endDay maps to. Above it the trend is held flat and only the
     /// price walk moves - see docs/TECHNICAL.md section 5.
     /// </summary>
@@ -110,6 +116,14 @@ public class Config
             ScalingMaxLevel = Math.Clamp(ScalingMaxLevel, Debug.FleaUnlockLevel + 1, 79);
             notes.Add($"scalingMaxLevel was {original}, clamped to {ScalingMaxLevel} " +
                       $"(must be above fleaUnlockLevel {Debug.FleaUnlockLevel} and at most 79)");
+        }
+
+        if (TroughLevel < Debug.FleaUnlockLevel || TroughLevel > ScalingMaxLevel)
+        {
+            var original = TroughLevel;
+            TroughLevel = Math.Clamp(TroughLevel, Debug.FleaUnlockLevel, ScalingMaxLevel);
+            notes.Add($"troughLevel was {original}, clamped to {TroughLevel} " +
+                      $"(must be between fleaUnlockLevel {Debug.FleaUnlockLevel} and scalingMaxLevel {ScalingMaxLevel})");
         }
 
         if (Debug.EndDay <= Debug.StartDay)

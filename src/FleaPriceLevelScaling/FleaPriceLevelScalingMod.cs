@@ -108,6 +108,7 @@ public class FleaPriceLevelScalingMod(
                        $"across levels {_config.Debug.FleaUnlockLevel}-{_table.MaxLevel}) | " +
                        $"server: {serverMode}, " +
                        $"intensityExponent: {_config.IntensityExponent}, " +
+                       $"troughLevel: {_config.TroughLevel}, " +
                        $"scalingMaxLevel: {_config.ScalingMaxLevel}, " +
                        $"priceShockSize: {_config.PriceShockSize}, " +
                        $"noise.enabled: {_config.Noise.Enabled}, " +
