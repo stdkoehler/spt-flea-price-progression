@@ -2,10 +2,36 @@ using System.Text.Json;
 using FleaPriceLevelScaling;
 
 // Verifies the C# port against golden vectors emitted by analysis/fleanoise.py.
-var path = Path.Combine("..", "..", "src", "data", "noise_test_vectors.json");
-if (!File.Exists(path)) { Console.Error.WriteLine($"missing {Path.GetFullPath(path)}"); return 2; }
+static string FindRepoRoot()
+{
+    foreach (var startPath in new[] { Directory.GetCurrentDirectory(), AppContext.BaseDirectory })
+    {
+        for (var dir = new DirectoryInfo(startPath); dir != null; dir = dir.Parent)
+        {
+            if (File.Exists(Path.Combine(dir.FullName, "spt-flea-price-level-scaling.sln")) ||
+                File.Exists(Path.Combine(dir.FullName, "src", "data", "noise_test_vectors.json")))
+            {
+                return dir.FullName;
+            }
+        }
+    }
 
-using var doc = JsonDocument.Parse(File.ReadAllText(path));
+    return Directory.GetCurrentDirectory();
+}
+
+var repoRoot = FindRepoRoot();
+var noiseTestVectorsPath = Path.Combine(repoRoot, "src", "data", "noise_test_vectors.json");
+var priceCurvesPath = Path.Combine(repoRoot, "src", "data", "price_curves.json");
+var priceTableTestVectorsPath = Path.Combine(repoRoot, "src", "data", "pricetable_test_vectors.json");
+var configPath = Path.Combine(repoRoot, "src", "FleaPriceLevelScaling", "config.jsonc");
+
+if (!File.Exists(noiseTestVectorsPath))
+{
+    Console.Error.WriteLine($"missing {Path.GetFullPath(noiseTestVectorsPath)}");
+    return 2;
+}
+
+using var doc = JsonDocument.Parse(File.ReadAllText(noiseTestVectorsPath));
 var root = doc.RootElement;
 int pass = 0, fail = 0;
 const double TOL = 1e-12;
@@ -71,24 +97,19 @@ Console.WriteLine($"\n{zn} z-vectors checked");
 // ---- price table ------------------------------------------------------
 Console.WriteLine("");
 Console.WriteLine("PriceTable:");
-var (tp, tf) = NoiseVectorTest.PriceTableCheck.Run(
-    Path.Combine("..", "..", "src", "data", "price_curves.json"),
-    Path.Combine("..", "..", "src", "data", "pricetable_test_vectors.json"));
+var (tp, tf) = NoiseVectorTest.PriceTableCheck.Run(priceCurvesPath, priceTableTestVectorsPath);
 pass += tp; fail += tf;
 
 // ---- data/code contract for the noise parameters ----------------------
 Console.WriteLine("");
 Console.WriteLine("Noise parameter contract:");
-var (mp, mf) = NoiseVectorTest.MetaCheck.Run(
-    Path.Combine("..", "..", "src", "data", "price_curves.json"));
+var (mp, mf) = NoiseVectorTest.MetaCheck.Run(priceCurvesPath);
 pass += mp; fail += mf;
 
 // ---- end-to-end smoke -------------------------------------------------
 Console.WriteLine("");
 Console.WriteLine("Smoke test (real config.jsonc + real table):");
-var smoke = NoiseVectorTest.SmokeCheck.Run(
-    Path.Combine("..", "..", "src", "FleaPriceLevelScaling", "config.jsonc"),
-    Path.Combine("..", "..", "src", "data", "price_curves.json"));
+var smoke = NoiseVectorTest.SmokeCheck.Run(configPath, priceCurvesPath);
 fail += smoke;
 
 
