@@ -52,7 +52,7 @@
     "endDay": 249.0,
 
     // How often prices drift and flea offers regenerate, in minutes.
-    // Default is 60 (hourly). Set lower (e.g. 5 or 1) for debugging/testing.
+    // Default is 60 (hourly). Set lower (e.g. 5 or 2) for debugging/testing.
     "regenerationIntervalMinutes": 60,
 
     // true  = every playthrough gets its own market, seeded from the profile

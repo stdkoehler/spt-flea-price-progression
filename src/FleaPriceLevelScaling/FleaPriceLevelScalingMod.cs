@@ -42,7 +42,7 @@ public class FleaPriceLevelScalingMod(
     /// <summary>How often to re-check level and time. Clamped to at most 120s or the configured
     /// regeneration interval in seconds.</summary>
     private long CheckIntervalSeconds =>
-        Math.Clamp((long)Math.Max(1, _config.Debug.RegenerationIntervalMinutes) * 60, 10, 120);
+        Math.Clamp((long)Math.Max(2, _config.Debug.RegenerationIntervalMinutes) * 60, 10, 120);
 
     private Config _config = new();
     private PriceTable? _table;
@@ -153,7 +153,7 @@ public class FleaPriceLevelScalingMod(
     {
         if (_table is null) return;
 
-        var intervalMinutes = Math.Max(1, _config.Debug.RegenerationIntervalMinutes);
+        var intervalMinutes = Math.Max(2, _config.Debug.RegenerationIntervalMinutes);
         var interval = TimeSpan.FromMinutes(intervalMinutes);
         var intervalElapsed = _regenerationTimer.IsDue(interval, out var elapsed);
 

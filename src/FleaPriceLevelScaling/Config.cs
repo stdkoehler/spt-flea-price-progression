@@ -97,10 +97,10 @@ public class Config
             Debug.FleaUnlockLevel = 15;
         }
 
-        if (Debug.RegenerationIntervalMinutes < 1)
+        if (Debug.RegenerationIntervalMinutes < 2)
         {
-            notes.Add($"debug.regenerationIntervalMinutes was {Debug.RegenerationIntervalMinutes}, reset to 1");
-            Debug.RegenerationIntervalMinutes = 1;
+            notes.Add($"debug.regenerationIntervalMinutes was {Debug.RegenerationIntervalMinutes}, reset to 2");
+            Debug.RegenerationIntervalMinutes = 2;
         }
 
         // Checked after fleaUnlockLevel so the comparison uses the corrected value.
