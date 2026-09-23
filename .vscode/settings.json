@@ -1,0 +1,41 @@
+{
+  // --- Solution & Language Server Configuration ---
+  "dotnet.defaultSolution": "spt-flea-price-level-scaling.sln",
+  "omnisharp.enableEditorConfigSupport": true,
+
+  // --- External Assembly Decompilation (F12 on SPTarkov Types) ---
+  "dotnet.navigation.navigateToDecompiledSources": true,
+  "dotnet.navigation.navigateToSourceLinkAndEmbeddedSources": true,
+
+  // --- Inlay Hints & Code Intelligence ---
+  "editor.inlayHints.enabled": "on",
+  "csharp.inlayHints.enableInlayHintsForTypes": true,
+  "csharp.inlayHints.enableInlayHintsForImplicitObjectCreation": true,
+  "dotnet.inlayHints.enableInlayHintsForParameters": true,
+
+  // --- C# Formatting & Cleanup ---
+  "[csharp]": {
+    "editor.defaultFormatter": "muhammad-sammy.csharp",
+    "editor.formatOnSave": true
+  },
+  "csharp.format.enable": true,
+  "dotnet.formatting.organizeImportsOnFormat": true,
+
+  // --- File Explorer & Search Cleanup ---
+  "files.exclude": {
+    "**/bin": true,
+    "**/obj": true,
+    "**/.git": true,
+    "src/FleaPriceLevelScaling/Package/SPT_Runtime": true
+  },
+  "search.exclude": {
+    "**/bin": true,
+    "**/obj": true,
+    "**/Package": true
+  },
+
+  // --- File Associations ---
+  "files.associations": {
+    "*.jsonc": "jsonc"
+  }
+}

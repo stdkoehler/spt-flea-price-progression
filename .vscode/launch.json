@@ -1,0 +1,22 @@
+{
+  "version": "0.2.0",
+  "configurations": [
+    {
+      "name": "Debug: NoiseVectorTest",
+      "type": "coreclr",
+      "request": "launch",
+      "preLaunchTask": "build-test",
+      "program": "${workspaceFolder}/tests/NoiseVectorTest/bin/Debug/net10.0/NoiseVectorTest.dll",
+      "args": [],
+      "cwd": "${workspaceFolder}/tests/NoiseVectorTest",
+      "console": "internalConsole",
+      "stopAtEntry": false
+    },
+    {
+      "name": "Attach: Pick Process (SPT.Server)",
+      "type": "coreclr",
+      "request": "attach",
+      "processId": "${command:pickProcess}"
+    }
+  ]
+}

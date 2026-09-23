@@ -1,0 +1,90 @@
+{
+  "version": "2.0.0",
+  "tasks": [
+    {
+      "label": "build",
+      "command": "dotnet",
+      "type": "process",
+      "args": [
+        "build",
+        "${workspaceFolder}/spt-flea-price-level-scaling.sln",
+        "/property:GenerateFullPaths=true",
+        "/consoleloggerparameters:NoSummary;ForceNoAlign"
+      ],
+      "problemMatcher": "$msCompile",
+      "group": {
+        "kind": "build",
+        "isDefault": true
+      }
+    },
+    {
+      "label": "build-mod",
+      "command": "dotnet",
+      "type": "process",
+      "args": [
+        "build",
+        "${workspaceFolder}/src/FleaPriceLevelScaling/FleaPriceLevelScaling.csproj",
+        "/property:GenerateFullPaths=true",
+        "/consoleloggerparameters:NoSummary;ForceNoAlign"
+      ],
+      "problemMatcher": "$msCompile"
+    },
+    {
+      "label": "build-mod-release",
+      "command": "dotnet",
+      "type": "process",
+      "args": [
+        "build",
+        "-c",
+        "Release",
+        "${workspaceFolder}/src/FleaPriceLevelScaling/FleaPriceLevelScaling.csproj",
+        "/property:GenerateFullPaths=true",
+        "/consoleloggerparameters:NoSummary;ForceNoAlign"
+      ],
+      "problemMatcher": "$msCompile"
+    },
+    {
+      "label": "build-test",
+      "command": "dotnet",
+      "type": "process",
+      "args": [
+        "build",
+        "${workspaceFolder}/tests/NoiseVectorTest/NoiseVectorTest.csproj",
+        "/property:GenerateFullPaths=true",
+        "/consoleloggerparameters:NoSummary;ForceNoAlign"
+      ],
+      "problemMatcher": "$msCompile"
+    },
+    {
+      "label": "run-test",
+      "command": "dotnet",
+      "type": "process",
+      "args": [
+        "run"
+      ],
+      "options": {
+        "cwd": "${workspaceFolder}/tests/NoiseVectorTest"
+      },
+      "problemMatcher": "$msCompile"
+    },
+    {
+      "label": "package-mod",
+      "command": "bash",
+      "type": "process",
+      "args": [
+        "${workspaceFolder}/src/FleaPriceLevelScaling/package.sh"
+      ],
+      "problemMatcher": []
+    },
+    {
+      "label": "clean",
+      "command": "dotnet",
+      "type": "process",
+      "args": [
+        "clean",
+        "${workspaceFolder}/spt-flea-price-level-scaling.sln"
+      ],
+      "problemMatcher": "$msCompile"
+    }
+  ]
+}
