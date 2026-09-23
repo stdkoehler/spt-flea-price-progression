@@ -86,7 +86,7 @@ Likely not needed.
 | `sigmaCap` | `0.5` | `0.0` - `5.0` | Ceiling on how wildly items is allowed to drift. |
 | `jumpProbability` | `0.04` | `0.0` - `1.0` | How often price shocks happen (4% of two-day windows). |
 | `fleaUnlockLevel` | `15` | - | Change only if another mod moves the flea unlock. |
-| `regenerationIntervalMinutes` | `60` | `>= 1` | How often prices drift and flea offers regenerate, in minutes. Set lower (e.g. 5 or 1) for debugging/testing. |
+| `regenerationIntervalMinutes` | `60` | `>= 2` | How often prices drift and flea offers regenerate, in minutes. Set lower (e.g. 5 or 1) for debugging/testing. |
 | `itemBlacklist` | `[]` | - | Template IDs to leave at SPT's default price. |
 
 ## Local vs. FIKA (Multiplayer / Co-op)
