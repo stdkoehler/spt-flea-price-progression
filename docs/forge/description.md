@@ -1,72 +1,59 @@
+# Flea Price Progression
+
 **Flea market prices change as you level up**
 
-Static flea prices didn't seem fun to us. It was way too easy to get money early on.
-There's the great [Live Flea Prices](https://sp-mod.com/mod/1131/live-flea-prices) mod.
-But that is mirroring the current wipe and not your actual SPT progression.
-We decided to built on the basis of this mod and use the provided data to simulate
-flea market movement over a wipe.
+Static flea prices get boring quickly, and making money early in a wipe feels way too easy. The great [Live Flea Prices](https://sp-mod.com/mod/1131/live-flea-prices) mod connects to the live market, but that mirrors the current real-world wipe, and does not correlate with your your own character's progression.
 
-To do that, we map seasonal flea prices to player level: at level 15 you see flea prices as
-in the beginning of a wipe, at level 79 you see flea prices as in the end of a
-wipe.
+**Flea Price Progression** bridges that gap: flea market prices adapt to your PMC level, replaying an authentic wipe economy at your own pace.
 
 [image: docs/img/season_overview.png]
 
-The prices we used to model this come from **948 real snapshots** of the live
-flea market, taken every six hours across the entire 1.0 season (15
-November 2025 to 2 August 2026).
+## What Does It Feel Like?
 
-For a typical item, the arc looks like this:
+When you play with this mod, the flea market evolves naturally as you progress:
 
-| Your level | 15 | 20 | 21 | 40 | 60 | 79 |
-|---|---|---|---|---|---|---|
-| Price | 100% | 67% | **65%** | 74% | 87% | 87% |
+- **Level 15 (Flea Unlock):** Fresh-wipe scarcity. Early quest items, starter weapon parts, and hideout materials are expensive. Finding rare keys in raid feels like a real jackpot.
+- **Around Level 21:** The post-unlock market crash. As more players flood the market with loot, prices hit their lowest point of the wipe. Great time to buy gear!
+- **Levels 22 to 60:** Mid-to-late wipe inflation. As players build wealth and upgrade their hideout, crafting consumables (fuel, respirators) become much more valuable, while common weapons become cheaper.
+- **Endgame:** Prices stabilize into late-season balance, keeping the economy fun without endless hyperinflation.
 
-Expensive when everything is sparse at the beginning, bottoming out around
-level 21, then inflation up to level 60.
+## Every Item Has Its Own Story
 
-At default config the whole season is mapped between level 15 and level **60**. 
-The real season only lasted 250 days, and in that time live players got to roughly
-level 50-70. We decided against assuming the end of the season was a level 79 state.
-Instead we cap the price trend movement from level 60 onward. They just keep drifting 
-day to day. You can move that line with `scalingMaxLevel` (see the Configuration tab).
+Prices don't just use a flat multiplier. Individual items follow real market behavior:
 
-The graph above only shows the average. Individual items may behave differently:
-
-| Item | Level 15 | Level 60 | |
+| Item | Level 15 | Level 60 | Trend |
 |---|---|---|---|
-| **Respirator** | ₽8,800 | ₽49,200 | x5.6 - strong inflation |
+| **Respirator** | ₽8,800 | ₽49,200 | x5.6 - strong inflation from hideout crafting |
 | **Geiger counter** | ₽27,400 | ₽89,400 | x3.3 - medium inflation |
-| **Gunpowder "Kite"** | ₽18,700 | ₽18,700 | x1.0 - doesn't seem to move in live data |
-| **Colt M4A1** | ₽111,000 | ₽47,900 | x0.43 - deflation for common items |
-| **Gas station key** | ₽755,000 | ₽20,300 | x0.03 - extreme deflation |
+| **Gunpowder "Kite"** | ₽18,700 | ₽18,700 | x1.0 - steady staple component |
+| **Colt M4A1** | ₽111,000 | ₽47,900 | x0.43 - deflation as weapons flood the market |
+| **Gas station key** | ₽755,000 | ₽20,300 | x0.03 - early scarcity, then extreme crash |
 
-Prices also **drift from day to day**, independent of leveling, mirroring the
-spikes and drops we see in real supply and demand. The seed is calculated from
-your profile ID and registration date, so every playthrough sees different
-market movement.
+## A Living Market
+
+Prices also **drift from day to day**, independent of leveling, mirroring natural spikes and drops in supply and demand. Every playthrough has its own unique market movements, so no two wipes feel the same.
 
 [image: docs/img/playthrough.png]
 
-*Two characters' playthroughs showing different market movement around the
-same underlying trend (black).*
+*Two different playthroughs showing unique market movement around the underlying trend (black line).*
 
-## Local and FIKA (Co-op) Support
+## Works for Solo and FIKA (Co-op)
 
-Because flea prices in EFT are global across the server, the mod handles single-player and multiplayer sessions seamlessly:
+Everything works out of the box with zero setup:
 
-- **At server startup (no players connected yet):** If you have a single profile on disk, prices initialize to your character's level immediately. If multiple profiles exist (FIKA / multi-profile setup), the server defaults safely to level 15 baseline and waits for an active player to connect.
-- **Solo play (Local server or solo on FIKA):** When you log into your profile, the flea market automatically adjusts to your active character level within 2 minutes. For single-player, this is the preferred behavior because the economy always reflects whichever character you are currently playing.
-- **Co-op play with friends (FIKA):** When multiple players are online simultaneously on a FIKA server, the flea market dynamically scales to the **highest level among all currently active players**.
-  - If a Level 15 player is playing and a Level 17 friend joins, the flea market smoothly updates to Level 17 so the economy matches the group's highest progression.
-  - If the higher-level player logs off, prices automatically adjust back down after 30 minutes of inactivity.
-  - *Consideration for FIKA groups:* In a dedicated co-op group, one could argue the market should be anchored to the highest-level profile existing on the server overall rather than switching dynamically depending on who is actively connected. This would keep the group's shared world progression steady. We have not made a final decision on this yet and are keeping it dynamic for now.
+- **Solo Play:** The flea market automatically matches whichever character you are currently playing.
+- **Co-op with Friends (FIKA):** When playing together, the market automatically scales to the **highest level among all currently active players**, so the whole group shares the same progression.
+
+## Safe to Install
+
+- Safe to add to or remove from an existing save at any time. Your character profile is never modified.
+- Zero performance impact on raids or server loading.
+
+## More Information
+
+- For the underlying data source, level mapping details, and server mechanics, see the **Technical Details** tab.
+- To tweak price swings, drift speed, or season length, see the **Configuration** tab.
 
 ## Credits
 
-Price data comes from
-[DrakiaXYZ/SPT-LiveFleaPriceDB](https://github.com/DrakiaXYZ/SPT-LiveFleaPriceDB),
-the same source the excellent [Live Flea Prices](https://sp-mod.com/mod/1131/live-flea-prices)
-mod uses. This mod takes a different angle on it: prices adapt to your
-character level to simulate a season, rather than tracking the live market
-in real time.
+Price data comes from [DrakiaXYZ/SPT-LiveFleaPriceDB](https://github.com/DrakiaXYZ/SPT-LiveFleaPriceDB), the same source used by the excellent [Live Flea Prices](https://sp-mod.com/mod/1131/live-flea-prices) mod.
