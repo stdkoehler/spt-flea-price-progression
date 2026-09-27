@@ -8,8 +8,8 @@
   </PropertyGroup>
   <ItemGroup>
     <!-- compile the mod's noise source directly; no SPT dependency needed -->
-    <Compile Include="../../src/FleaPriceLevelScaling/FleaNoise.cs" />
-    <Compile Include="../../src/FleaPriceLevelScaling/PriceTable.cs" />
-    <Compile Include="../../src/FleaPriceLevelScaling/Config.cs" />
+    <Compile Include="../../src/FleaPriceProgression/FleaNoise.cs" />
+    <Compile Include="../../src/FleaPriceProgression/PriceTable.cs" />
+    <Compile Include="../../src/FleaPriceProgression/Config.cs" />
   </ItemGroup>
 </Project>

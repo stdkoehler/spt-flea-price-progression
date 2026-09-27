@@ -1,6 +1,6 @@
 {
   // --- Solution & Language Server Configuration ---
-  "dotnet.defaultSolution": "spt-flea-price-level-scaling.sln",
+  "dotnet.defaultSolution": "spt-flea-price-progression.sln",
   "omnisharp.enableEditorConfigSupport": true,
 
   // --- External Assembly Decompilation (F12 on SPTarkov Types) ---
@@ -26,7 +26,7 @@
     "**/bin": true,
     "**/obj": true,
     "**/.git": true,
-    "src/FleaPriceLevelScaling/Package/SPT_Runtime": true
+    "src/FleaPriceProgression/Package/SPT_Runtime": true
   },
   "search.exclude": {
     "**/bin": true,

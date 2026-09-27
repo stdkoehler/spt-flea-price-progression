@@ -1,11 +1,11 @@
 using SPTarkov.Server.Core.Models.Spt.Mod;
 
-namespace FleaPriceLevelScaling;
+namespace FleaPriceProgression;
 
-public record FleaPriceLevelScalingMetadata : IModMetadata
+public record FleaPriceProgressionMetadata : IModMetadata
 {
-    public string ModGuid { get; init; } = "com.styrr.fleapricelevelscaling";
-    public string Name { get; init; } = "Flea Price Level Scaling";
+    public string ModGuid { get; init; } = "com.styrr.fleapriceprogression";
+    public string Name { get; init; } = "Flea Price Progression";
     public string Author { get; init; } = "Styrr";
     public List<string>? Contributors { get; init; }
     public SemanticVersioning.Version Version { get; init; } = new("1.0.0");

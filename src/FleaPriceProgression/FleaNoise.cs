@@ -1,6 +1,6 @@
 using System;
 
-namespace FleaPriceLevelScaling;
+namespace FleaPriceProgression;
 
 /// <summary>
 /// Stateless market price walk. A pure stateless function of (templateId, hour)

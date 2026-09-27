@@ -1,4 +1,4 @@
-# Flea Price Level Scaling
+# Flea Price Progression
 
 **Flea market prices change as you level up**
 
@@ -44,7 +44,7 @@ For this mod we use a pseudo-random approach for this. Seed is calculated from p
 ## Installation
 
 1. Download the release.
-2. Extract the zip into your SPT root (it already contains `SPT_Runtime/user/mods/FleaPriceLevelScaling/`).
+2. Extract the zip into your SPT root (it already contains `SPT_Runtime/user/mods/FleaPriceProgression/`).
 3. Start the server.
 
 ## Configuration
@@ -155,11 +155,11 @@ This mod itself is [MIT licensed](LICENSE).
 ### Build
 
 ```bash
-cd src/FleaPriceLevelScaling
+cd src/FleaPriceProgression
 dotnet build -c Release
 ```
 
-Output is `bin/Release/FleaPriceLevelScaling/` containing three files:
+Output is `bin/Release/FleaPriceProgression/` containing three files:
 - DLL
 - `config.jsonc`
 - `data/price_curves.json`
@@ -167,12 +167,12 @@ Output is `bin/Release/FleaPriceLevelScaling/` containing three files:
 ### Package a release
 
 ```bash
-cd src/FleaPriceLevelScaling
+cd src/FleaPriceProgression
 ./package.sh
 ```
 
-Builds Release and writes `Package/FleaPriceLevelScaling-<version>.zip`, laid out as
-`SPT_Runtime/user/mods/FleaPriceLevelScaling/...` so it can be extracted straight onto an SPT
+Builds Release and writes `Package/FleaPriceProgression-<version>.zip`, laid out as
+`SPT_Runtime/user/mods/FleaPriceProgression/...` so it can be extracted straight onto an SPT
 install - the same convention DrakiaXYZ's SPT mods use.
 
 ### Test

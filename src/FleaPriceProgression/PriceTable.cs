@@ -1,7 +1,7 @@
 using System.Text.Json;
 using System.Text.Json.Serialization;
 
-namespace FleaPriceLevelScaling;
+namespace FleaPriceProgression;
 
 /// <summary>
 /// The day-indexed price curves produced by analysis/07_build_trend_curves.py, resampled

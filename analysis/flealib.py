@@ -1,4 +1,4 @@
-"""Shared helpers for the flea-price-scaling analysis pipeline."""
+"""Shared helpers for the flea-price-progression analysis pipeline."""
 from pathlib import Path
 import numpy as np, pandas as pd
 

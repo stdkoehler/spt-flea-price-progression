@@ -1,4 +1,4 @@
-using FleaPriceLevelScaling;
+using FleaPriceProgression;
 
 namespace NoiseVectorTest;
 

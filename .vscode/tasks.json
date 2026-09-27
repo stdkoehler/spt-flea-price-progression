@@ -7,7 +7,7 @@
       "type": "process",
       "args": [
         "build",
-        "${workspaceFolder}/spt-flea-price-level-scaling.sln",
+        "${workspaceFolder}/spt-flea-price-progression.sln",
         "/property:GenerateFullPaths=true",
         "/consoleloggerparameters:NoSummary;ForceNoAlign"
       ],
@@ -23,7 +23,7 @@
       "type": "process",
       "args": [
         "build",
-        "${workspaceFolder}/src/FleaPriceLevelScaling/FleaPriceLevelScaling.csproj",
+        "${workspaceFolder}/src/FleaPriceProgression/FleaPriceProgression.csproj",
         "/property:GenerateFullPaths=true",
         "/consoleloggerparameters:NoSummary;ForceNoAlign"
       ],
@@ -37,7 +37,7 @@
         "build",
         "-c",
         "Release",
-        "${workspaceFolder}/src/FleaPriceLevelScaling/FleaPriceLevelScaling.csproj",
+        "${workspaceFolder}/src/FleaPriceProgression/FleaPriceProgression.csproj",
         "/property:GenerateFullPaths=true",
         "/consoleloggerparameters:NoSummary;ForceNoAlign"
       ],
@@ -72,7 +72,7 @@
       "command": "bash",
       "type": "process",
       "args": [
-        "${workspaceFolder}/src/FleaPriceLevelScaling/package.sh"
+        "${workspaceFolder}/src/FleaPriceProgression/package.sh"
       ],
       "problemMatcher": []
     },
@@ -82,7 +82,7 @@
       "type": "process",
       "args": [
         "clean",
-        "${workspaceFolder}/spt-flea-price-level-scaling.sln"
+        "${workspaceFolder}/spt-flea-price-progression.sln"
       ],
       "problemMatcher": "$msCompile"
     }

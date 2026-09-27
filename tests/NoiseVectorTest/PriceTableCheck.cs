@@ -1,5 +1,5 @@
 using System.Text.Json;
-using FleaPriceLevelScaling;
+using FleaPriceProgression;
 
 namespace NoiseVectorTest;
 

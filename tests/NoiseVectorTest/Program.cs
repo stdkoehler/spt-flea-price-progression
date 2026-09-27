@@ -1,5 +1,5 @@
 using System.Text.Json;
-using FleaPriceLevelScaling;
+using FleaPriceProgression;
 
 // Verifies the C# port against golden vectors emitted by analysis/fleanoise.py.
 static string FindRepoRoot()
@@ -8,7 +8,7 @@ static string FindRepoRoot()
     {
         for (var dir = new DirectoryInfo(startPath); dir != null; dir = dir.Parent)
         {
-            if (File.Exists(Path.Combine(dir.FullName, "spt-flea-price-level-scaling.sln")) ||
+            if (File.Exists(Path.Combine(dir.FullName, "spt-flea-price-progression.sln")) ||
                 File.Exists(Path.Combine(dir.FullName, "src", "data", "noise_test_vectors.json")))
             {
                 return dir.FullName;
@@ -23,7 +23,7 @@ var repoRoot = FindRepoRoot();
 var noiseTestVectorsPath = Path.Combine(repoRoot, "src", "data", "noise_test_vectors.json");
 var priceCurvesPath = Path.Combine(repoRoot, "src", "data", "price_curves.json");
 var priceTableTestVectorsPath = Path.Combine(repoRoot, "src", "data", "pricetable_test_vectors.json");
-var configPath = Path.Combine(repoRoot, "src", "FleaPriceLevelScaling", "config.jsonc");
+var configPath = Path.Combine(repoRoot, "src", "FleaPriceProgression", "config.jsonc");
 
 if (!File.Exists(noiseTestVectorsPath))
 {

@@ -1,6 +1,6 @@
 #!/usr/bin/env bash
 # Builds the mod in Release and zips it up as a ready-to-extract SPT_Runtime tree
-# (SPT_Runtime/user/mods/FleaPriceLevelScaling/...), the same layout DrakiaXYZ's SPT mods use so a
+# (SPT_Runtime/user/mods/FleaPriceProgression/...), the same layout DrakiaXYZ's SPT mods use so a
 # release can be extracted straight onto an SPT install.
 set -euo pipefail
 
@@ -34,12 +34,12 @@ else
     NC=''
 fi
 
-MOD_NAME=FleaPriceLevelScaling
-VERSION=$(sed -n 's/.*SemanticVersioning\.Version Version { get; init; } = new("\(.*\)").*/\1/p' FleaPriceLevelScalingMetadata.cs)
+MOD_NAME=FleaPriceProgression
+VERSION=$(sed -n 's/.*SemanticVersioning\.Version Version { get; init; } = new("\(.*\)").*/\1/p' FleaPriceProgressionMetadata.cs)
 if [ -z "$VERSION" ]; then
     echo "" >&2
     echo -e "${BOLD_RED}################################################################################${NC}" >&2
-    echo -e "${BOLD_RED}# ERROR: Could not read version from FleaPriceLevelScalingMetadata.cs${NC}" >&2
+    echo -e "${BOLD_RED}# ERROR: Could not read version from FleaPriceProgressionMetadata.cs${NC}" >&2
     echo -e "${BOLD_RED}################################################################################${NC}\n" >&2
     exit 1
 fi

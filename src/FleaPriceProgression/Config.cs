@@ -1,7 +1,7 @@
 using System.Text.Json;
 using System.Text.Json.Serialization;
 
-namespace FleaPriceLevelScaling;
+namespace FleaPriceProgression;
 
 /// <summary>
 /// Player-facing settings. Mirrors config.jsonc; see the root README for the

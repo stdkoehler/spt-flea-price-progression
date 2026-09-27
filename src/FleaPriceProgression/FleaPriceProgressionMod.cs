@@ -15,7 +15,7 @@ using SPTarkov.Server.Core.Services.Ragfair;
 using SPTarkov.Server.Core.Utils;
 using SPTarkov.Server.Core.Utils.Cloners;
 
-namespace FleaPriceLevelScaling;
+namespace FleaPriceProgression;
 
 /// <summary>
 /// Scales flea prices by player level, replaying a real Tarkov season.
@@ -25,8 +25,8 @@ namespace FleaPriceLevelScaling;
 /// for the per-playthrough market seed.
 /// </summary>
 [Injectable(InjectionType.Singleton, TypePriority = OnLoadOrder.RagfairCallbacks - 2)]
-public class FleaPriceLevelScalingMod(
-    ISptLogger<FleaPriceLevelScalingMod> logger,
+public class FleaPriceProgressionMod(
+    ISptLogger<FleaPriceProgressionMod> logger,
     TemplateTable templateTable,
     RagfairOfferService ragfairOfferService,
     RagfairOfferGenerator ragfairOfferGenerator,
@@ -37,7 +37,7 @@ public class FleaPriceLevelScalingMod(
     ModHelper modHelper,
     ICloner cloner) : IOnLoad, IOnUpdate
 {
-    private const string Tag = "[FleaPriceLevelScaling]";
+    private const string Tag = "[FleaPriceProgression]";
 
     /// <summary>How often to re-check level and time.</summary>
     private const long CheckIntervalSeconds = 120;
