@@ -35,7 +35,7 @@ The seed for these pseudo-random movements is calculated from your **profile ID 
 Because flea prices in EFT are global across the server, the mod handles single-player and multiplayer sessions as follows:
 
 - **At server startup (no players connected yet):** If you have a single profile on disk, prices initialize to your character's level immediately. If multiple profiles exist (FIKA / multi-profile setup), the server defaults safely to level 15 baseline and waits for an active player to connect.
-- **Solo play (Local server or solo on FIKA):** When you log into your profile, the flea market automatically adjusts to your active character level within 2 minutes. For single-player, this is the preferred behavior because the economy always reflects whichever character you are currently playing.
+- **Solo play (Local server or solo on FIKA):** When you log into your profile, the flea market automatically adjusts to your active character level immediately. For single-player, this is the preferred behavior because the economy always reflects whichever character you are currently playing.
 - **Co-op play with friends (FIKA):** When multiple players are online simultaneously on a FIKA server, the flea market dynamically scales to the **highest level among all currently active players**.
   - If a Level 15 player is playing and a Level 17 friend joins, the flea market smoothly updates to Level 17 so the economy matches the group's highest progression.
   - If the higher-level player logs off, prices automatically adjust back down after 30 minutes of inactivity.

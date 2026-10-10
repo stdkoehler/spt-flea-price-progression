@@ -48,6 +48,7 @@ public class FleaPriceProgressionMod(
     private Dictionary<MongoId, double> _originalPrices = new();
     private bool _active;
 
+    private string _lastActiveProfiles = "";
     private int _lastLevel = -1;
     private ulong _lastWorld;
     private DateTimeOffset _lastRegenerationUtc = DateTimeOffset.MinValue;
@@ -123,10 +124,21 @@ public class FleaPriceProgressionMod(
 
     public Task<bool> OnUpdateAsync(long secondsSinceLastRun, CancellationToken cancellationToken)
     {
-        var interval = CheckIntervalSeconds;
-        if (!_active || secondsSinceLastRun < interval) return Task.FromResult(false);
+        if (!_active) return Task.FromResult(false);
 
-        logger.Info($"{Tag} Entering {interval}s update callback ({secondsSinceLastRun}s elapsed).");
+        // The server polls this callback far more often than the check interval. Use
+        // the in-between polls to notice a player connecting, so their level is priced
+        // right away instead of after the next interval.
+        var intervalDue = secondsSinceLastRun >= CheckIntervalSeconds;
+        var connectionChanged = false;
+        try { connectionChanged = ActiveProfilesChanged(); }
+        catch { /* best effort; the interval check still runs */ }
+        if (!intervalDue && !connectionChanged) return Task.FromResult(false);
+
+        if (intervalDue)
+            logger.Info($"{Tag} Entering {CheckIntervalSeconds}s update callback ({secondsSinceLastRun}s elapsed).");
+        else
+            logger.Info($"{Tag} Active profile set changed, re-checking player level.");
 
         try
         {
@@ -141,7 +153,24 @@ public class FleaPriceProgressionMod(
             _active = false;
         }
 
-        return Task.FromResult(true);
+        // Only a full interval run resets the server's last-run clock; a connection
+        // check must not postpone the periodic level/time re-check.
+        return Task.FromResult(intervalDue);
+    }
+
+    /// <summary>
+    /// True when the set of recently active profiles differs from the previous poll.
+    /// Cheap: one lookup, no price work. <see cref="Apply"/> still decides whether
+    /// anything actually needs repricing.
+    /// </summary>
+    private bool ActiveProfilesChanged()
+    {
+        var key = string.Join(",", profileActivityService.GetActiveProfileIdsWithinMinutes(30)
+            .Select(id => id.ToString()!)
+            .OrderBy(id => id, StringComparer.Ordinal));
+        if (key == _lastActiveProfiles) return false;
+        _lastActiveProfiles = key;
+        return key.Length > 0;
     }
 
     /// <summary>

@@ -8,7 +8,7 @@ public record FleaPriceProgressionMetadata : IModMetadata
     public string Name { get; init; } = "Flea Price Progression";
     public string Author { get; init; } = "Styrr";
     public List<string>? Contributors { get; init; }
-    public SemanticVersioning.Version Version { get; init; } = new("1.0.0");
+    public SemanticVersioning.Version Version { get; init; } = new("1.1.0");
     public SemanticVersioning.Range SptVersion { get; init; } = new("~4.1.0");
     public List<string>? Incompatibilities { get; init; } = ["xyz.drakia.livefleaprices"];
     public Dictionary<string, SemanticVersioning.Range>? ModDependencies { get; init; }

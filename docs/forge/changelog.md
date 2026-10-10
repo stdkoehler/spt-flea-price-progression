@@ -1,3 +1,8 @@
+## 1.1.0
+
+- Flea prices now update immediately when a player connects or the active player set changes, instead of waiting up to 2 minutes for the next periodic poll.
+- Periodic background updates (for day-to-day drift and market regeneration) continue to run on their regular schedule.
+
 ## 1.0.0
 
 Initial release.
